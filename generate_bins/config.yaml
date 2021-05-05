@@ -1,0 +1,6 @@
+reference_folder: "/mnt/AchTeraD/Documents/references/hg19_cnv/"
+output_sim-reads: "/mnt/AchTeraD/Documents/references/hg19_sim-reads/"
+chromlist: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/chromlist.txt"
+
+sim_readlength: 50
+
