@@ -1,0 +1,28 @@
+run_info:
+  run: "CUTseq_2"
+  library: "results"
+  base_path: "/mnt/AchTeraD/data/"
+  threads: 32
+
+
+analysis:
+  binsize: [100000]
+  readlength: 48 
+  # This should be the closest possible to the given bin files. 
+  # i.e. if your sequence reads are of length 130 (due to linkers) you should use 150 here.
+  # Possible inputs currently: 48, 76, 150
+
+# Path to bin/blacklist/GC-content files
+bin_path: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/files/hg19/"
+blacklist: "hg19-blacklist.v2_adjusted.bed" # Should be in bin_path/ directory
+
+cnv_calling:
+  # single cell or bulk
+  single_cell: False
+  # Parameters for DNA copy segmentation
+  alpha: 0.0001
+  sdprune: 0.05
+
+# Script paths
+cnv: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/scripts/cnv_calling.R"
+plotting: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/scripts/plotting.R"
