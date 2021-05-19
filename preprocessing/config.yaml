@@ -21,4 +21,4 @@ demux: "python /mnt/AchTeraD/Documents/Projects/scCUTseq/Scripts/snakemake-prepr
 alfred: "/home/luukharbers/alfred/bin/alfred"
 
 # Threads
-threads: 32
+threads: 4
