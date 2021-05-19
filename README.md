@@ -20,6 +20,7 @@ Python:
 Other software:
 * snakemake
 * alfred
+* umi_tools (make sure this is in PATH)
 
 ### Preprocessing workflow
 This workflow expects standard illumina demultiplexed `fastq` files as input (can be either multiple `fastq` files for each lane or merged).
