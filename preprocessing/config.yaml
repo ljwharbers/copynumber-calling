@@ -19,6 +19,7 @@ ref: "/mnt/AchTeraD/Documents/references/hg19/hg19.fa"
 # Tools
 demux: "python /mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/preprocessing/processBarcode.py"
 alfred: "/home/luukharbers/alfred/bin/alfred"
+umi_tools: "/home/luukharbers/miniconda3/bin/umi_tools"
 
 # Threads
 threads: 4

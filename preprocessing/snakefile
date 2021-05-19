@@ -22,6 +22,7 @@ pattern = config['pattern']
 # Path variables
 demux = config['demux']
 alfred = config['alfred']
+umitools = config['umi_tools']
 
 # Get list of barcodes
 barcodes = pd.read_csv(barcode_file, sep = ",", header = None).iloc[:,0]
@@ -202,7 +203,7 @@ if paired:
             log=outdir + "logs/{bc}.log"
         threads: 4
         shell:
-            "umi_tools dedup -I {input.bam} -S {output.bam} -L {output.log} "
+            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} "
             "--mapping-quality 30 --paired && samtools index -@ {threads} {output.bam}"
 else:
     rule deduplication:
@@ -214,7 +215,7 @@ else:
             log=outdir + "logs/{bc}.log"
         threads: 4
         shell:
-            "umi_tools dedup -I {input.bam} -S {output.bam} -L {output.log} "
+            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} "
             "--mapping-quality 30 && samtools index -@ {threads} {output.bam}"
 
 # QC post-dedup
