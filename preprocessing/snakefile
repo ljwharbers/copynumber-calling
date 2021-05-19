@@ -84,7 +84,7 @@ else:
                 barcodes=barcode_file
             output:
                 fastq1=expand(outdir + "demultiplexed/{bc}_R1.fq.gz", bc=barcodes),
-                fastq2=expand(outdir + "demultiplexed/{bc}_R2.fq.gz", bc=barcodes)),
+                fastq2=expand(outdir + "demultiplexed/{bc}_R2.fq.gz", bc=barcodes),
                 discarded=outdir + "demultiplexed/discarded.fq.gz",
                 logfile=outdir + samplename + '.stats.txt'
             params:
@@ -233,10 +233,8 @@ rule aflred_post:
 # QC summary
 rule qc:
     input:
-        expand(outdir + "bamfiles/{bc}.all.tsv.gz",
-            bc = barcodes),
-        expand(outdir + "bamfiles/{bc}.dedup.tsv.gz",
-            bc = barcodes)
+        expand(outdir + "bamfiles/{bc}.all.tsv.gz", bc=barcodes),
+        expand(outdir + "bamfiles/{bc}.dedup.tsv.gz", bc=barcodes)
     output:
         protected(outdir + samplename + "_all.tsv"),
         protected(outdir + samplename + "_dedup.tsv")

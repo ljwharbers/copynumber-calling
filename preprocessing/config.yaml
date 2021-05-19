@@ -1,7 +1,7 @@
 # Sample related
-input: "/mnt/AchTeraD/data/CUTseq_2/fastq/"
+indir: "/mnt/AchTeraD/data/CUTseq_2/fastq/"
 samplename: "CUTseq_Turin_S1"
-output: "/mnt/AchTeraD/data/CUTseq_2/results/"
+outdir: "/mnt/AchTeraD/data/CUTseq_2/results/"
 paired: False
 lanesplit: True
 trim: True # Only for paired samples
