@@ -17,7 +17,7 @@ mismatches: 1
 ref: "/mnt/AchTeraD/Documents/references/hg19/hg19.fa"
 
 # Tools
-demux: "python /mnt/AchTeraD/Documents/Projects/scCUTseq/Scripts/snakemake-preprocessing/processBarcode.py"
+demux: "python /mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/preprocessing/processBarcode.py"
 alfred: "/home/luukharbers/alfred/bin/alfred"
 
 # Threads

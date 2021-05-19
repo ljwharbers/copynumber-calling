@@ -31,7 +31,7 @@ rule all:
     input:
         expand(outdir + "bamfiles/{bc}.dedup_q30.bam", bc=barcodes),
         expand(outdir + "bamfiles/{bc}.dedup_q30.bam.bai", bc=barcodes),
-        outdir + samplename + "_log.txt",
+        outdir + samplename + '.stats.txt',
         outdir + samplename + "_all.tsv",
         outdir + samplename + "_dedup.tsv"
 
@@ -54,7 +54,7 @@ if lanesplit:
                 pattern=pattern,
                 threads=threads
             shell:
-                demux + "processBarcode.py -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
+                demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
                 "-t {params.threads} -r paired"
     else:
@@ -65,14 +65,14 @@ if lanesplit:
             output:
                 fastq=expand(outdir + "demultiplexed/{bc}.fq.gz", bc=barcodes),
                 discarded=outdir + "demultiplexed/discarded.fq.gz",
-                logfile=outdir + samplename + "log.txt"
+                logfile=outdir + samplename + '.stats.txt'
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
                 pattern=pattern,
                 threads=threads
             shell:
-                demux + "processBarcode.py -i {input.fastq} -o {params.outdir} "
+                demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
                 "-t {params.threads} -r single"
 else:
@@ -93,7 +93,7 @@ else:
                 pattern=pattern,
                 threads=threads
             shell:
-                demux + "processBarcode.py -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
+                demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
                 "-t {params.threads} -r paired"
     else:
@@ -111,7 +111,7 @@ else:
                 pattern=pattern,
                 threads=threads
             shell:
-                demux + "processBarcode.py -i {input.fastq} -o {params.outdir} "
+                demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
                 "-t {params.threads} -r single"
 
@@ -183,7 +183,7 @@ else:
 # QC pre-dedup
 rule aflred_pre:
     input:
-        bam=outdir + "bamfiles/{bc}_filtered.bam",
+        bam=outdir + "bamfiles/{bc}.bam",
         ref=ref
     output:
         temp(outdir + "bamfiles/{bc}.all.tsv.gz")
@@ -195,8 +195,7 @@ rule aflred_pre:
 if paired:
     rule deduplication:
         input:
-            bam=outdir + "bamfiles/{bc}_filtered.bam",
-            index=outdir + "bamfiles/{bc}_filtered.bai"
+            bam=outdir + "bamfiles/{bc}.bam",
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",
@@ -208,8 +207,7 @@ if paired:
 else:
     rule deduplication:
         input:
-            bam=outdir + "bamfiles/{bc}_filtered.bam",
-            index=outdir + "bamfiles/{bc}_filtered.bai"
+            bam=outdir + "bamfiles/{bc}.bam",
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",
@@ -233,8 +231,8 @@ rule aflred_post:
 # QC summary
 rule qc:
     input:
-        expand(outdir + "bamfiles/{bc}.all.tsv.gz", bc=barcodes),
-        expand(outdir + "bamfiles/{bc}.dedup.tsv.gz", bc=barcodes)
+        expand(outdir + "bamfiles/{bc}.all.tsv.gz", bc = barcodes),
+        expand(outdir + "bamfiles/{bc}.dedup.tsv.gz", bc = barcodes)
     output:
         protected(outdir + samplename + "_all.tsv"),
         protected(outdir + samplename + "_dedup.tsv")
