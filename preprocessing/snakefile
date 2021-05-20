@@ -32,7 +32,6 @@ rule all:
     input:
         expand(outdir + "bamfiles/{bc}.dedup_q30.bam", bc=barcodes),
         expand(outdir + "bamfiles/{bc}.dedup_q30.bam.bai", bc=barcodes),
-        outdir + samplename + '.stats.txt',
         outdir + samplename + "_all.tsv",
         outdir + samplename + "_dedup.tsv"
 
