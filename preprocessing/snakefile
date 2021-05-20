@@ -47,8 +47,7 @@ if lanesplit:
             output:
                 fastq1=expand(outdir + "demultiplexed/{bc}_R1.fq.gz", bc=barcodes),
                 fastq2=expand(outdir + "demultiplexed/{bc}_R2.fq.gz", bc=barcodes),
-                discarded=outdir + "demultiplexed/discarded.fq.gz",
-                logfile=outdir + samplename + '.stats.txt'
+                discarded=outdir + "demultiplexed/discarded.fq.gz"
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
@@ -65,8 +64,7 @@ if lanesplit:
                 barcodes=barcode_file
             output:
                 fastq=expand(outdir + "demultiplexed/{bc}.fq.gz", bc=barcodes),
-                discarded=outdir + "demultiplexed/discarded.fq.gz",
-                logfile=outdir + samplename + '.stats.txt'
+                discarded=outdir + "demultiplexed/discarded.fq.gz"
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
@@ -86,8 +84,7 @@ else:
             output:
                 fastq1=expand(outdir + "demultiplexed/{bc}_R1.fq.gz", bc=barcodes),
                 fastq2=expand(outdir + "demultiplexed/{bc}_R2.fq.gz", bc=barcodes),
-                discarded=outdir + "demultiplexed/discarded.fq.gz",
-                logfile=outdir + samplename + '.stats.txt'
+                discarded=outdir + "demultiplexed/discarded.fq.gz"
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
@@ -104,8 +101,7 @@ else:
                 barcodes=barcode_file
             output:
                 fastq1=expand(outdir + "demultiplexed/{bc}_R1.fq.gz", bc=barcodes),
-                discarded=outdir + "demultiplexed/discarded.fq.gz",
-                logfile=outdir + samplename + '.stats.txt'
+                discarded=outdir + "demultiplexed/discarded.fq.gz"
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
