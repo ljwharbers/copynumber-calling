@@ -23,6 +23,7 @@ pattern = config['pattern']
 demux = config['demux']
 alfred = config['alfred']
 umitools = config['umi_tools']
+movetags = config['movetags']
 
 # Get list of barcodes
 barcodes = pd.read_csv(barcode_file, sep = ",", header = None).iloc[:,0]
@@ -176,10 +177,20 @@ else:
                 "samtools sort -o {output.bam} && "
                 "samtools index -@ {threads} {output.bam}" 
 
+# Move tags to correct place in bamfile
+rule moveTags:
+    input:
+        bam=outdir + "bamfiles/{bc}.bam"
+    output:
+        bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
+    shell:
+        movetags + " -i {input} | samtools view -hbo {output} && "
+        "samtools index {output}" 
+
 # QC pre-dedup
 rule aflred_pre:
     input:
-        bam=outdir + "bamfiles/{bc}.bam",
+        bam=outdir + "bamfiles/{bc}_fixed.bam",
         ref=ref
     output:
         temp(outdir + "bamfiles/{bc}.all.tsv.gz")
@@ -191,27 +202,27 @@ rule aflred_pre:
 if paired:
     rule deduplication:
         input:
-            bam=outdir + "bamfiles/{bc}.bam",
+            bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",
             log=outdir + "logs/{bc}.log"
         threads: 4
         shell:
-            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} "
-            "--mapping-quality 30 --paired && samtools index -@ {threads} {output.bam}"
+            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} --extract-umi-method tag "
+            "--umi-tag 'RX:Z' --mapping-quality 30 --paired && samtools index -@ {threads} {output.bam}"
 else:
     rule deduplication:
         input:
-            bam=outdir + "bamfiles/{bc}.bam",
+            bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",
             log=outdir + "logs/{bc}.log"
         threads: 4
         shell:
-            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} "
-            "--mapping-quality 30 && samtools index -@ {threads} {output.bam}"
+            umitools + " dedup -I {input.bam} -S {output.bam} -L {output.log} --extract-umi-method tag "
+            "--umi-tag 'RX:Z' --mapping-quality 30 && samtools index -@ {threads} {output.bam}"
 
 # QC post-dedup
 rule aflred_post:
