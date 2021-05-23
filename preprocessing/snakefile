@@ -51,8 +51,8 @@ if lanesplit:
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
-                pattern=pattern,
-                threads=threads
+                pattern=pattern
+            threads: threads
             shell:
                 demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
@@ -68,8 +68,8 @@ if lanesplit:
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
-                pattern=pattern,
-                threads=threads
+                pattern=pattern
+            threads: threads
             shell:
                 demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
@@ -88,8 +88,8 @@ else:
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
-                pattern=pattern,
-                threads=threads
+                pattern=pattern
+            threads: threads
             shell:
                 demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
@@ -105,8 +105,8 @@ else:
             params:
                 mismatches=mismatches,
                 outdir=outdir + "demultiplexed",
-                pattern=pattern,
-                threads=threads
+                pattern=pattern
+            threads: threads
             shell:
                 demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
