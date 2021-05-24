@@ -25,18 +25,18 @@ parser = add_argument(parser, "--threads", help = "Number of threads to use", na
 parser = add_argument(parser, "--output", help = "Path to output file", nargs = 1)
 argv = parse_args(parser)
 
-argv = list()
-argv$counts = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/all-counts.tsv.gz"
-argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_100000_48_bwa"
-argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
-argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_100000_48_bwa.bed"
-argv$alpha = 0.0001
-argv$undo.prune = 0.05
-argv$type = "single"
-argv$minploidy = 1.5
-argv$maxploidy = 6
-argv$threads = 4
-argv$output = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
+# argv = list()
+# argv$counts = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/all-counts.tsv.gz"
+# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_100000_48_bwa"
+# argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
+# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_100000_48_bwa.bed"
+# argv$alpha = 0.0001
+# argv$undo.prune = 0.05
+# argv$type = "single"
+# argv$minploidy = 1.5
+# argv$maxploidy = 6
+# argv$threads = 4
+# argv$output = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
