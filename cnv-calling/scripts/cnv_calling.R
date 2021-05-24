@@ -182,6 +182,10 @@ if(type == "single"){
     return(out$segments_read[, cell, with = F] * CN[cell])
   })
   
+  # Scale counts_lrr
+  res = pblapply(colnames(out$counts_lrr), function(cell) out$counts_lrr[[cell]] * CN[cell])
+  out$counts_lrr_scaled = data.table(do.call(cbind, res))
+  
   # Save to out
   out$segments_scaled = data.table(do.call(cbind, res))
   out$copynumber = round(out$segments_scaled)
@@ -197,17 +201,17 @@ if(type == "single"){
   out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
   #out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(x))) / sum(x)})]
   out$stats[, non_integerness := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$segments_scaled[[x]])))]
-  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr[[x]])))] # Scale this
-  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr[[x]])))] # Scale this
+  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr_scaled[[x]])))] # Scale this
+  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr_scaled[[x]])))] # Scale this
   out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
   #out$stats[, autocorrelation := tail(acf(out$counts_lrr, 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)] # Scale this
   out$stats[, mean_absolute_deviation := colMads(as.matrix(out$counts_lrr), method = "mean", constant = 1, na.rm = TRUE) ]
   out$stats[, mean_variance := colMeans(var(out$copynumber), na.rm = TRUE)]
   
   # Calculate halfiness
-  halfiness = (-log2(abs(pmin(abs(out$segments - out$counts_lrr), 0.499) - 0.5))) - 1 # Scale this
+  halfiness = (-log2(abs(pmin(abs(out$segments_scaled - out$counts_lrr_scaled), 0.499) - 0.5))) - 1 # Scale this
   out$stats[, total_halfiness := colSums(halfiness, na.rm = TRUE)]
-  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr + 1), na.rm = TRUE)] # Scale this
+  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr_scaled + 1), na.rm = TRUE)] # Scale this
   #out$stats[, mean_state_mads := ]
   #out$stats[, mean_state_vars := ]
   out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
@@ -224,9 +228,9 @@ if(type == "single"){
   out$stats[, total_reads := sapply(sample, function(x) sum(out$counts[[x]]))]
   out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
   out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
-  out$stats[, coef_variation := NULL]
-  out$stats[, mean_absolute_deviation := NULL]
-  out$stats[, breakpoints := NULL]
+  out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
+  out$stats[, mean_absolute_deviation := colMads(as.matrix(out$counts_lrr), method = "mean", constant = 1, na.rm = TRUE)]
+  out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
   
 }
 
