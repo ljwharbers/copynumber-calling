@@ -1,6 +1,6 @@
 run_info:
-  run: "CUTseq_2"
-  library: "results"
+  run: "BICRO279"
+  library: "NZ247"
   base_path: "/mnt/AchTeraD/data/"
   threads: 32
 
@@ -13,7 +13,7 @@ analysis:
   # Possible inputs currently: 48, 76, 150
 
 # Path to bin/blacklist/GC-content files
-bin_path: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/files/hg19/"
+bin_path: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/"
 blacklist: "hg19-blacklist.v2_adjusted.bed" # Should be in bin_path/ directory
 
 cnv_calling:
@@ -24,5 +24,5 @@ cnv_calling:
   sdprune: 0.05
 
 # Script paths
-cnv: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/scripts/cnv_calling.R"
-plotting: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/scripts/plotting.R"
+cnv: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/scripts/cnv_calling.R"
+plotting: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/scripts/plotting.R"

@@ -25,18 +25,18 @@ parser = add_argument(parser, "--threads", help = "Number of threads to use", na
 parser = add_argument(parser, "--output", help = "Path to output file", nargs = 1)
 argv = parse_args(parser)
 
-# argv = list()
-# argv$counts = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/all-counts.tsv.gz"
-# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/files/hg19/GC_variable_100000_48_bwa"
-# argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/files/hg19/hg19-blacklist.v2_adjusted.bed"
-# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copy-number-pipeline/files/hg19/variable_100000_48_bwa.bed"
-# argv$alpha = 0.0001
-# argv$undo.prune = 0.05
-# argv$type = "bulk"
-# argv$minploidy = 1.5
-# argv$maxploidy = 6
-# argv$threads = 4
-# argv$output = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
+argv = list()
+argv$counts = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/all-counts.tsv.gz"
+argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_100000_48_bwa"
+argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
+argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_100000_48_bwa.bed"
+argv$alpha = 0.0001
+argv$undo.prune = 0.05
+argv$type = "single"
+argv$minploidy = 1.5
+argv$maxploidy = 6
+argv$threads = 4
+argv$output = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
@@ -141,7 +141,7 @@ median_segments = pblapply(colnames(out$counts_gc), function(cell) {
   dt = data.table(num = out$segments_long[ID == cell]$num.mark)
   # Calculate start and end bin for segments
   dt[, end := cumsum(num)]
-  dt[, start := shift(end, fill = 0) + 1]
+  dt[, start := data.table::shift(end, fill = 0) + 1]
   
   medians = sapply(1:nrow(dt), function(x) {
     return(median(out$counts_gc[[cell]][dt[x, start]:dt[x, end]]))
@@ -179,11 +179,12 @@ if(type == "single"){
     # Define CN multiplier and assign to CN vector
     CN[cell] <<- CNmult[1, cell] ## Assignment outside scope
     # return integer copy number profile
-    return(round(out$segments_read[, cell, with = F] * CN[cell]))
+    return(out$segments_read[, cell, with = F] * CN[cell])
   })
   
   # Save to out
-  out$copynumber = data.table(do.call(cbind, res))
+  out$segments_scaled = data.table(do.call(cbind, res))
+  out$copynumber = round(out$segments_scaled)
   names(CN) = colnames(out$segments_read)
   out$cn = CN
   
@@ -195,18 +196,25 @@ if(type == "single"){
   out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
   out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
   #out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(x))) / sum(x)})]
-  out$stats[, MSRSI_non_integerness := NULL]
-  out$stats[, MBRSI_dispersion_non_integerness := NULL]
-  out$stats[, MBRSM_dispersion := NULL]
-  out$stats[, coef_variation := NULL]
-  out$stats[, mean_absolute_deviation := NULL]
-  out$stats[, total_halfiness := NULL]
-  out$stats[, scaled_halfiness := NULL]
-  out$stats[, mean_state_mads := NULL]
-  out$stats[, mean_state_vars := NULL]
-  out$stats[, breakpoints := NULL]
-  out$stats[, mean_cn := NULL]
-  out$stats[, mode_cn := NULL]
+  out$stats[, non_integerness := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$segments_scaled[[x]])))]
+  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr[[x]])))] # Scale this
+  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr[[x]])))] # Scale this
+  out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
+  #out$stats[, autocorrelation := tail(acf(out$counts_lrr, 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)] # Scale this
+  out$stats[, mean_absolute_deviation := colMads(as.matrix(out$counts_lrr), method = "mean", constant = 1, na.rm = TRUE) ]
+  out$stats[, mean_variance := colMeans(var(out$copynumber), na.rm = TRUE)]
+  
+  # Calculate halfiness
+  halfiness = (-log2(abs(pmin(abs(out$segments - out$counts_lrr), 0.499) - 0.5))) - 1 # Scale this
+  out$stats[, total_halfiness := colSums(halfiness, na.rm = TRUE)]
+  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr + 1), na.rm = TRUE)] # Scale this
+  #out$stats[, mean_state_mads := ]
+  #out$stats[, mean_state_vars := ]
+  out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
+  out$stats[, mean_cn := sapply(sample, function(x) mean(out$copynumber[[x]]))]
+  out$stats[, mode_cn := sapply(sample, function(x) {
+    names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))]
+  })]
   
 } else {
   # Write stats for bulk
