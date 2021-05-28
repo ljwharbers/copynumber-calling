@@ -26,19 +26,19 @@ parser = add_argument(parser, "--threads", help = "Number of threads to use", na
 parser = add_argument(parser, "--output", help = "Path to output file", nargs = 1)
 argv = parse_args(parser)
 
-# argv = list()
-# argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
-# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
-# argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
-# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
-# argv$binsize = 500000
-# argv$alpha = 0.0001
-# argv$undo.prune = 0.05
-# argv$type = "single"
-# argv$minploidy = 1.5
-# argv$maxploidy = 6
-# argv$threads = 4
-# argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
+argv = list()
+argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
+argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
+argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
+argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
+argv$binsize = 500000
+argv$alpha = 0.0001
+argv$undo.prune = 0.05
+argv$type = "single"
+argv$minploidy = 1.5
+argv$maxploidy = 6
+argv$threads = 4
+argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
@@ -236,7 +236,7 @@ if(type == "single"){
   out$stats[, mean_cn := sapply(sample, function(x) mean(out$copynumber[[x]]))]
   out$stats[, mode_cn := 
               sapply(sample, function(x) {
-                names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))]
+                names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))[1]]
                 })
             ]
   
