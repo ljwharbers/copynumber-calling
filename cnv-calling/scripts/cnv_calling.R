@@ -14,6 +14,7 @@ parser = add_argument(parser, "--counts", help = "Path to counts", nargs = 1)
 parser = add_argument(parser, "--bins", help = "Path to bin file", nargs = 1)
 parser = add_argument(parser, "--blacklist", help = "Path to blacklist file", nargs = 1)
 parser = add_argument(parser, "--gc", help = "Path to GC content file", nargs = 1)
+parser = add_argument(parser, "--binsize", help = "Binsize to run with", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--alpha", help = "alpha parameter for segmantation with DNACopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--prune", help = "undo.prune parameter for segmentation with DNAcopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--type", help = "Type of sequencing 'single' or 'bulk'", nargs = 1, type = "character")
@@ -26,17 +27,18 @@ parser = add_argument(parser, "--output", help = "Path to output file", nargs = 
 argv = parse_args(parser)
 
 # argv = list()
-# argv$counts = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/all-counts.tsv.gz"
-# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_100000_48_bwa"
+# argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
+# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
 # argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
-# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_100000_48_bwa.bed"
+# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
+# argv$binsize = 500000
 # argv$alpha = 0.0001
 # argv$undo.prune = 0.05
 # argv$type = "single"
 # argv$minploidy = 1.5
 # argv$maxploidy = 6
 # argv$threads = 4
-# argv$output = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
+# argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
@@ -71,6 +73,7 @@ out$undo.prune = argv$prune
 
 # Set parameters
 type = argv$type
+binsize = argv$binsize
 samples = colnames(out$counts)
 minploidy = argv$minploidy
 maxploidy = argv$maxploidy
@@ -89,6 +92,9 @@ lowess.gc = function(x, y) {
 # Set names
 setnames(out$bins, c("chr", "start", "end"))
 setnames(out$blacklist, c("chr", "start", "end", "reason"))
+
+# Only keep large blacklisted regions
+out$blacklist = out$blacklist[(end - start) > 0.2 * binsize,]
 
 # Get overlaps with blacklist
 bins = copy(out$bins) # Make copy, do not assign by reference
@@ -109,6 +115,7 @@ out$gc = out$gc[indices]
 out$bins = out$bins[indices]
 
 # Normalize by mean and GC correction
+cat("Running GC normalization...\n")
 out$counts_gc = out$counts[, pblapply(.SD, function(sample) {
   lowess.gc(out$gc$V1, (sample+1 / mean(sample+1)))
   }, cl = threads)]
@@ -118,17 +125,20 @@ out$counts_gc[out$counts_gc == 0] = 1e-3
 out$counts_lrr = log2(out$counts_gc)
 
 # Make CNA object, do smoothing and segmentation
+cat("Running Segmentation...\n")
 cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
 cna_smooth = smooth.CNA(cna)
 cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune, 
                          njobs = threads, distrib = "Rparallel")
 out$segments_long = data.table(cna_segment$output)
+out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
+setorder(out$segments_long, ID)
 
 # Add segments to output list
 segments_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(loc.start, num.mark), 
                                      seg.mean = rep(seg.mean, num.mark)), by = .(ID)]
-segments_rep = segments_rep[mixedorder(segments_rep$chr)]
-setorder(segments_rep, ID)
+#segments_rep = segments_rep[mixedorder(segments_rep$chr)]
+#setorder(segments_rep, ID)
 segments_rep[, bin_num := rep(1:nrow(out$counts_lrr), ncol(out$counts_lrr))]
 out$segments = dcast(segments_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
 
@@ -182,15 +192,20 @@ if(type == "single"){
     return(out$segments_read[, cell, with = F] * CN[cell])
   })
   
+  # Setnames to CN
+  names(CN) = colnames(out$segments_read)
+  out$cn = CN
+  
   # Scale counts_lrr
   res = pblapply(colnames(out$counts_lrr), function(cell) out$counts_lrr[[cell]] * CN[cell])
   out$counts_lrr_scaled = data.table(do.call(cbind, res))
+  setnames(out$counts_lrr_scaled, colnames(out$counts_lrr))
   
   # Save to out
+  res = pblapply(colnames(out$segments_read), function(cell) out$segments_read[[cell]] * CN[cell])
   out$segments_scaled = data.table(do.call(cbind, res))
+  setnames(out$segments_scaled, colnames(out$segments_read))
   out$copynumber = round(out$segments_scaled)
-  names(CN) = colnames(out$segments_read)
-  out$cn = CN
   
   # Write stats
   out$stats = data.table(
@@ -199,26 +214,31 @@ if(type == "single"){
   out$stats[, total_reads := sapply(sample, function(x) sum(out$counts[[x]]))]
   out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
   out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
-  #out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(x))) / sum(x)})]
+  out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(out$counts[[x]]))) / sum(out$counts[[x]])})]
   out$stats[, non_integerness := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$segments_scaled[[x]])))]
-  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr_scaled[[x]])))] # Scale this
-  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr_scaled[[x]])))] # Scale this
+  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr_scaled[[x]])))]
+  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr_scaled[[x]])))]
   out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
-  #out$stats[, autocorrelation := tail(acf(out$counts_lrr, 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)] # Scale this
-  out$stats[, mean_absolute_deviation := colMads(as.matrix(out$counts_lrr), method = "mean", constant = 1, na.rm = TRUE) ]
+  out$stats[, autocorrelation := 
+              sapply(sample, function(x) {
+                tail(acf(out$counts_lrr_scaled[[x]], 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)
+                })
+            ]
+  out$stats[, mean_absolute_deviation := sapply(sample, function(x) mad(out$counts_lrr[[x]], constant = 1))]
+  
   out$stats[, mean_variance := colMeans(var(out$copynumber), na.rm = TRUE)]
   
   # Calculate halfiness
-  halfiness = (-log2(abs(pmin(abs(out$segments_scaled - out$counts_lrr_scaled), 0.499) - 0.5))) - 1 # Scale this
+  halfiness = (-log2(abs(pmin(abs(out$segments_scaled - out$counts_lrr_scaled), 0.499) - 0.5))) - 1
   out$stats[, total_halfiness := colSums(halfiness, na.rm = TRUE)]
-  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr_scaled + 1), na.rm = TRUE)] # Scale this
-  #out$stats[, mean_state_mads := ]
-  #out$stats[, mean_state_vars := ]
+  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr_scaled + 1), na.rm = TRUE)]
   out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
   out$stats[, mean_cn := sapply(sample, function(x) mean(out$copynumber[[x]]))]
-  out$stats[, mode_cn := sapply(sample, function(x) {
-    names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))]
-  })]
+  out$stats[, mode_cn := 
+              sapply(sample, function(x) {
+                names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))]
+                })
+            ]
   
 } else {
   # Write stats for bulk
@@ -228,10 +248,10 @@ if(type == "single"){
   out$stats[, total_reads := sapply(sample, function(x) sum(out$counts[[x]]))]
   out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
   out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
+  out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(out$counts[[x]]))) / sum(out$counts[[x]])})]
   out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
-  out$stats[, mean_absolute_deviation := colMads(as.matrix(out$counts_lrr), method = "mean", constant = 1, na.rm = TRUE)]
+  out$stats[, mean_absolute_deviation := sapply(sample, function(x) mad(out$counts_lrr[[x]], constant = 1))]
   out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
-  
 }
 
 # Write output

@@ -21,10 +21,12 @@ threads = argv$threads
 theme_set(theme_cowplot())
 
 # argv = list()
-# argv$rds = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/cnv.rds"
-# argv$runtype = "bulk"
-# argv$outdir = "/mnt/AchTeraD/data/CUTseq_2/results/cnv/100000/plots/"
-# 
+# argv$rds = "/mnt/AchTeraD/data/BICRO277/NZ169/cnv/500000/cnv.rds"
+# argv$runtype = "single"
+# argv$outdir = "/mnt/AchTeraD/data/BICRO277/NZ169/cnv/500000/plots/"
+# threads = 20
+
+# # 
 # # Make outdir if not exists
 # if(!dir.exists(argv$outdir)) {
 #   dir.create(argv$outdir)
@@ -64,10 +66,12 @@ samples = colnames(cnv$counts_gc)
 
 # Plot individual profiles
 if (argv$runtype == 'single'){
+  cat("Plotting individual profiles...\n")
   pblapply(samples, function(id) {
     dt = cbind(bins, cnv$copynumber[[id]], cnv$counts_gc[[id]] * cnv$cn[id])
     setnames(dt, c("chr", "start", "end", "bin", "end_cum", "start_cum", "cn", "raw"))
     
+    dt[, cn := ifelse(cn < 11, cn, 11)]
     dt[, col := ifelse(cn < 11, as.character(cn), "10+")]
     dt[, col := factor(col, levels = c(as.character(0:10), "10+"))]
     
@@ -75,14 +79,14 @@ if (argv$runtype == 'single'){
     stat_string = paste0(id,
                          " | reads: ", cnv$stats[sample == id, total_reads],
                          " | avg reads/bin: ", round(cnv$stats[sample == id, mean_reads]),
-                         " | spikiness: ", "placeholder")
+                         " | spikiness: ", round(cnv$stats[sample == id, spikiness], 3))
     
     # save plot
     plot = ggplot(dt, aes(x = bin)) +
       geom_point(aes(y = raw, color = col), size = 0.7) +
       geom_point(aes(y = cn), size = 1) +
       scale_color_manual(values = colors, drop = F) +
-      scale_y_continuous(labels=comma_format(accuracy = 1), breaks = pretty_breaks(6)) +
+      scale_y_continuous(labels=comma_format(accuracy = 1), breaks = pretty_breaks(6), limits = c(0, 12)) +
       scale_x_continuous(expand = c(0, 0)) +
       labs(y = "Copy Number", x = "", subtitle = stat_string) +
       geom_vline(data = chr_bounds, aes(xintercept = max), linetype = 2) +
@@ -100,7 +104,7 @@ if (argv$runtype == 'single'){
   dt = cbind(bins, cnv$copynumber)
   
   # Make dendrogram
-  cat("Calculate distances and cluster all samples")
+  cat("Calculate distances and clustering samples...\n")
   hc = hclust(dist(t(dt[, 7:ncol(dt)])), method = "average")
   dhc = as.dendrogram(hc)
   
@@ -139,10 +143,12 @@ if (argv$runtype == 'single'){
   
   # Combine plots and save
   combined = plot_grid(dendro, heatmap,  align = "h", rel_widths = c(0.2, 2), ncol = 2)
+  cat("Plotting Genomewide heatmap...\n")
   ggsave(filename = paste0(argv$outdir, "/genomewide/genomewideheatmap.png"), plot = combined,
-         width = 16, nrow(ddata$labels) * 0.07, dpi = 900)
+         width = 20, height = 28, dpi = 900)
 } else {
   pblapply(samples, function(id) {
+    cat("Plotting individual profiles...\n")
     dt = cbind(bins, cnv$segments[[id]], cnv$counts_lrr[[id]])
     setnames(dt, c("chr", "start", "end", "bin", "end_cum", "start_cum", "segment", "raw"))
     
@@ -180,7 +186,7 @@ if (argv$runtype == 'single'){
   dt = cbind(bins, cnv$segments)
   
   # Make dendrogram
-  cat("Calculate distances and cluster all samples")
+  cat("Calculate distances and cluster all samples...\n")
   hc = hclust(dist(t(dt[, 7:ncol(dt)])), method = "average")
   dhc = as.dendrogram(hc)
   
@@ -216,6 +222,7 @@ if (argv$runtype == 'single'){
   
   # Combine plots and save
   combined = plot_grid(dendro, heatmap,  align = "h", rel_widths = c(0.2, 2), ncol = 2)
+  cat("Plotting Genomewide heatmap...\n")
   ggsave(filename = paste0(argv$outdir, "/genomewide/genomewideheatmap.png"), plot = combined,
          width = 16, height = 4, dpi = 900)
 }

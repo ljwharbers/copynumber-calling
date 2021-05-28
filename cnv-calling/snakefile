@@ -45,14 +45,14 @@ rule makeBed:
 	input:
 		bam=full_path + "bamfiles/{sample}.dedup_q30.bam"
 	output:
-		bed=full_path + "bedfiles/{sample}.bed.gz"
+		bed=full_path + "cnv/bedfiles/{sample}.bed.gz"
 	shell:
 		"bedtools bamtobed -i {input} | sort -k1,1V -k2,2n -k3,3n | gzip -c > {output}"
 
 # Count reads per bin
 rule countReads:
 	input:
-		bed=full_path + "bedfiles/{sample}.bed.gz",
+		bed=full_path + "cnv/bedfiles/{sample}.bed.gz",
 		bins=binpath + "variable_{binsize}_" + str(readlength) + "_bwa.bed"
 	output:
 		temp(full_path + "cnv/{binsize}/{sample}_counts.tsv")
@@ -86,11 +86,12 @@ rule callCNVs:
 	params:
 		alpha=alpha,
 		sdprune=sdprune,
-		run_type=run_type
+		run_type=run_type,
+		binsize="{binsize}"
 	threads: 
 		threads
 	shell:
-		"Rscript " + cnv + " --counts {input.counts} --bins {input.bins} "
+		"Rscript " + cnv + " --counts {input.counts} --bins {input.bins} --binsize {params.binsize} "
 		"--blacklist {input.blacklist} --gc {input.gc} --alpha {params.alpha} "
 		"--prune {params.sdprune} --type {params.run_type} --threads {threads} --output {output}"
 
