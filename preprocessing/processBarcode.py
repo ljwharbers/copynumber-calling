@@ -259,13 +259,13 @@ if __name__ == '__main__':
                         if verbose:
                             print(os.path.basename(input_file) + ':', 'processed', processed, 'reads')
                     file_iterator.close()
-                out_stats = re.sub('(fq|fastq).*$', 'stats.txt', input_file)
-                with open(out_stats, 'wt') as out_handle:
+                out_stats = re.sub('(fq|fastq).*$', 'stats.txt', os.path.basename(input_file))
+                with open(output_dir + out_stats, 'wt') as out_handle:
                     for key in barcode_files.keys():
                         out_handle.write('\t'.join(['Barcode', key, str(local_counter[key]-1), str((local_counter[key]-1)/processed) ]) + '\n')
                     out_handle.write('\t'.join(['Barcode', 'Discarded', str(local_counter['discarded']-1), str((local_counter['discarded']-1)/processed)]) + '\n')
             if len(inFile) > 1:
-                with open('Comulative.stats.txt', 'wt') as out_handle:
+                with open(output_dir + 'Cumulative.stats.txt', 'wt') as out_handle:
                     for key in barcode_files.keys():
                         out_handle.write('\t'.join(['Barcode', key, str(local_counter[key]-1), str((local_counter[key]-1)/processed)]) + '\n')
                     out_handle.write('\t'.join(['Barcode', 'Discarded', str(local_counter['discarded']-1), str((local_counter['discarded']-1)/processed)]) + '\n')
