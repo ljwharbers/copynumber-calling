@@ -79,7 +79,8 @@ if (argv$runtype == 'single'){
     stat_string = paste0(id,
                          " | reads: ", cnv$stats[sample == id, total_reads],
                          " | avg reads/bin: ", round(cnv$stats[sample == id, mean_reads]),
-                         " | spikiness: ", round(cnv$stats[sample == id, spikiness], 3))
+                         " | spikiness: ", round(cnv$stats[sample == id, spikiness], 3),
+                         " | RF classifier: ", cnv$stats[sample == id, classifier_prediction])
     
     # save plot
     plot = ggplot(dt, aes(x = bin)) +

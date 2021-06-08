@@ -5,7 +5,7 @@
 ## Script to perform cnv calling from a list of binned read counts
 
 ## Load/install packages
-packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools")
+packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools", "randomForest")
 invisible(sapply(packages, function(x) suppressMessages(require(x, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE))))
 
 ## Parse arguments
@@ -18,6 +18,10 @@ parser = add_argument(parser, "--binsize", help = "Binsize to run with", nargs =
 parser = add_argument(parser, "--alpha", help = "alpha parameter for segmantation with DNACopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--prune", help = "undo.prune parameter for segmentation with DNAcopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--type", help = "Type of sequencing 'single' or 'bulk'", nargs = 1, type = "character")
+parser = add_argument(parser, "--randomforest", help = "Path to randomforest model for single cell classification", 
+                      nargs = 1, type = "character")
+parser = add_argument(parser, "--rfthreshold", help = "threshold of randomforest model for single cell classification", 
+                      nargs = 1, type = "character")
 parser = add_argument(parser, "--minploidy", help = "Min ploidy of sample (single-cell only)", 
                       nargs = 1, type = "integer", default = 1.5)
 parser = add_argument(parser, "--maxploidy", help = "Max ploidy of sample (single-cell only)", 
@@ -26,19 +30,21 @@ parser = add_argument(parser, "--threads", help = "Number of threads to use", na
 parser = add_argument(parser, "--output", help = "Path to output file", nargs = 1)
 argv = parse_args(parser)
 
-argv = list()
-argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
-argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
-argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
-argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
-argv$binsize = 500000
-argv$alpha = 0.0001
-argv$undo.prune = 0.05
-argv$type = "single"
-argv$minploidy = 1.5
-argv$maxploidy = 6
-argv$threads = 4
-argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
+# argv = list()
+# argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
+# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
+# argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
+# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
+# argv$binsize = 500000
+# argv$alpha = 0.0001
+# argv$undo.prune = 0.05
+# argv$type = "single"
+# argv$minploidy = 1.5
+# argv$maxploidy = 6
+# argv$threads = 4
+# argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
+# argv$randomforest = "/mnt/AchTeraD/Documents/Projects/scCUTseq/data/cell_classifier/randomforest.rds"
+# argv$rfthreshold = 0.3
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
@@ -79,7 +85,8 @@ minploidy = argv$minploidy
 maxploidy = argv$maxploidy
 threads = argv$threads
 output = argv$output
-
+rf = readRDS(argv$randomforest)
+rfthreshold = argv$rfthreshold
 
 ## Define functions
 # LOWESS regression for GC normalization
@@ -239,6 +246,10 @@ if(type == "single"){
                 names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))[1]]
                 })
             ]
+  
+  # Run randomforest classification
+  prediction = as.data.table(predict(rf, out$stats, type="prob"))
+  out$stats[, classifier_prediction := ifelse(prediction$good >= rfthreshold, "good", "bad")]
   
 } else {
   # Write stats for bulk
