@@ -14,12 +14,16 @@ if config['cnv_calling']['single_cell']:
 	run_type='single'
 else:
 	run_type='bulk'
+use_rf=config['run_info']['use_rf']
+rfthreshold = config['run_info']['rf_threshold']
+
 # Full path
 full_path = f"{base}{run}/{library}/"
 
 # Scripts
 cnv = config["cnv"]
 plotting = config["plotting"]
+randomforest = config['randomforest']
 
 # Binsize(s), readlength and path where to find the binning files
 # Path to binning files should be structured in the following way:
@@ -74,6 +78,12 @@ rule combineCounts:
 	shell:
 		"paste {input} | gzip > {output}"
 
+# Set randomforest parameter
+if run_type and use_rf:
+	rf="--randomforest " + randomforest + " --rfthreshold " + str(rfthreshold)
+else:
+	rf=""
+
 # Copy number calling
 rule callCNVs:
 	input:
@@ -87,13 +97,14 @@ rule callCNVs:
 		alpha=alpha,
 		sdprune=sdprune,
 		run_type=run_type,
-		binsize="{binsize}"
+		binsize="{binsize}",
+		rf=rf
 	threads: 
 		threads
 	shell:
 		"Rscript " + cnv + " --counts {input.counts} --bins {input.bins} --binsize {params.binsize} "
-		"--blacklist {input.blacklist} --gc {input.gc} --alpha {params.alpha} "
-		"--prune {params.sdprune} --type {params.run_type} --threads {threads} --output {output}"
+		"--blacklist {input.blacklist} --gc {input.gc} --alpha {params.alpha} --prune {params.sdprune} "
+		"--type {params.run_type} {params.rf} --threads {threads} --output {output} "
 
 
 # Generate plots

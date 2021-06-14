@@ -56,7 +56,7 @@ if lanesplit:
             shell:
                 demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
-                "-t {params.threads} -r paired"
+                "-t {threads} -r paired -v"
     else:
         rule demux:
             input:
@@ -73,7 +73,7 @@ if lanesplit:
             shell:
                 demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
-                "-t {params.threads} -r single"
+                "-t {threads} -r single -v"
 else:
     if paired:
         rule demux:
@@ -93,7 +93,7 @@ else:
             shell:
                 demux + " -i {input.fastq1} -i2 {input.fastq2} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
-                "-t {params.threads} -r paired"
+                "-t {threads} -r paired -v"
     else:
         rule demux:
             input:
@@ -110,7 +110,7 @@ else:
             shell:
                 demux + " -i {input.fastq} -o {params.outdir} "
                 "-b {input.barcodes} -d {params.mismatches} -p {params.pattern} "
-                "-t {params.threads} -r single"
+                "-t {threads} -r single -v"
 
 # Trim adapters
 if trim and paired:
@@ -121,7 +121,6 @@ if trim and paired:
         output:
             fastq1=outdir + "demultiplexed/{bc}.trimmed_R1.fq.gz",
             fastq2=outdir + "demultiplexed/{bc}.trimmed_R2.fq.gz"
-        threads: threads
         shell:
             "fastp -i {input.fastq1} -I {input.fastq2} -o {output.fastq1} "
             "-O {output.fastq2} --detect_adapter_for_pe "
@@ -164,16 +163,16 @@ else:
     else:
         rule bwa:
             input:
-                ref=ref,
                 fastq1=outdir + "demultiplexed/{bc}.fq.gz",
             output:
                 bam=temp(outdir + "bamfiles/{bc}.bam"),
                 bai=temp(outdir + "bamfiles/{bc}.bam.bai")
             params:
-                rg=r"@RG\tID:{bc}\tSM:{bc}\tPL:ILLUMINA"
+                rg=r"@RG\tID:{bc}\tSM:{bc}\tPL:ILLUMINA",
+                ref="/mnt/AchTeraD/Documents/references/hg19/hg19"
             threads: threads
             shell:
-                "bwa mem -M -t {threads} -R '{params.rg}' {input} | "
+                "bowtie2 -x {params.ref} --threads {threads} -q {input.fastq1} | "
                 "samtools sort -o {output.bam} && "
                 "samtools index -@ {threads} {output.bam}" 
 
