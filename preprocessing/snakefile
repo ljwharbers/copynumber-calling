@@ -181,7 +181,8 @@ rule moveTags:
     input:
         bam=outdir + "bamfiles/{bc}.bam"
     output:
-        bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
+        bam=temp(outdir + "bamfiles/{bc}_fixed.bam"),
+        bai=temp(outdir + "bamfiles/{bc}_fixed.bam.bai")
     shell:
         movetags + " -i {input} | samtools view -hbo {output} && "
         "samtools index {output}" 

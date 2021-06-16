@@ -72,7 +72,7 @@ rule countReads:
 # Combine counts
 rule combineCounts:
 	input:
-		expand(full_path + "cnv/{binsize}/{sample}_counts.tsv", binsize = binsize, sample = samples)
+		expand(full_path + "cnv/{{binsize}}/{sample}_counts.tsv", binsize = binsize, sample = samples)
 	output:
 		full_path + "cnv/{binsize}/all-counts.tsv.gz"
 	shell:
