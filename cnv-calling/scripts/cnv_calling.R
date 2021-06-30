@@ -19,7 +19,7 @@ parser = add_argument(parser, "--alpha", help = "alpha parameter for segmantatio
 parser = add_argument(parser, "--prune", help = "undo.prune parameter for segmentation with DNAcopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--type", help = "Type of sequencing 'single' or 'bulk'", nargs = 1, type = "character")
 parser = add_argument(parser, "--randomforest", help = "Path to randomforest model for single cell classification", 
-                      nargs = 1, type = "character")
+                      default = NULL, nargs = 1, type = "character")
 parser = add_argument(parser, "--rfthreshold", help = "threshold of randomforest model for single cell classification", 
                       nargs = 1, type = "character")
 parser = add_argument(parser, "--minploidy", help = "Min ploidy of sample (single-cell only)", 
@@ -85,7 +85,7 @@ minploidy = argv$minploidy
 maxploidy = argv$maxploidy
 threads = argv$threads
 output = argv$output
-rf = readRDS(argv$randomforest)
+if(!is.na(argv$randomforest)) rf = readRDS(argv$randomforest)
 rfthreshold = argv$rfthreshold
 
 ## Define functions
@@ -135,8 +135,9 @@ out$counts_lrr = log2(out$counts_gc)
 cat("Running Segmentation...\n")
 cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
 cna_smooth = smooth.CNA(cna)
-cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune, 
-                         njobs = threads, distrib = "Rparallel")
+# cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune, 
+#                          njobs = threads, distrib = "Rparallel")
+cna_segment = segment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune)
 out$segments_long = data.table(cna_segment$output)
 out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
 setorder(out$segments_long, ID)

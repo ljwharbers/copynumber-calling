@@ -1,24 +1,26 @@
 run_info:
-  run: "BICRO277"
-  library: "NZ183"
+  run: "CUTseq_Turin5"
+  library: "EB5"
   base_path: "/mnt/AchTeraD/data/"
   threads: 32
+  use_rf: False
+  rf_threshold: 0.3 # 0.5 is default for most models. You can check the best threshold using an ROC curve.
 
 
 analysis:
-  binsize: [500000]
-  readlength: 150 
+  binsize: [50000]
+  readlength: 76 
   # This should be the closest possible to the given bin files. 
   # i.e. if your sequence reads are of length 130 (due to linkers) you should use 150 here.
   # Possible inputs currently: 48, 76, 150
 
 # Path to bin/blacklist/GC-content files
 bin_path: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/"
-blacklist: "hg19-blacklist.v2_adjusted.bed" # Should be in bin_path/ directory
+blacklist: "hg19-blacklist.v2.bed" # Should be in bin_path/ directory
 
 cnv_calling:
   # single cell or bulk
-  single_cell: True
+  single_cell: False
   # Parameters for DNA copy segmentation
   alpha: 0.0001
   sdprune: 0.05
@@ -26,3 +28,4 @@ cnv_calling:
 # Script paths
 cnv: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/scripts/cnv_calling.R"
 plotting: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/scripts/plotting.R"
+randomforest: "/mnt/AchTeraD/Documents/Projects/scCUTseq/data/cell_classifier/randomforest.rds"

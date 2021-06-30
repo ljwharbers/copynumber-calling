@@ -163,29 +163,30 @@ else:
     else:
         rule bwa:
             input:
+                ref=ref,
                 fastq1=outdir + "demultiplexed/{bc}.fq.gz",
             output:
                 bam=temp(outdir + "bamfiles/{bc}.bam"),
                 bai=temp(outdir + "bamfiles/{bc}.bam.bai")
             params:
-                rg=r"@RG\tID:{bc}\tSM:{bc}\tPL:ILLUMINA",
-                ref="/mnt/AchTeraD/Documents/references/hg19/hg19"
+                rg=r"@RG\tID:{bc}\tSM:{bc}\tPL:ILLUMINA"
             threads: threads
             shell:
-                "bowtie2 -x {params.ref} --threads {threads} -q {input.fastq1} | "
+                "bwa mem -M -t {threads} -R '{params.rg}' {input} | "
                 "samtools sort -o {output.bam} && "
-                "samtools index -@ {threads} {output.bam}" 
+                "samtools index -@ {threads} {output.bam}"
 
 # Move tags to correct place in bamfile
 rule moveTags:
     input:
-        bam=outdir + "bamfiles/{bc}.bam"
+        bam=outdir + "bamfiles/{bc}.bam",
+        bai=outdir + "bamfiles/{bc}.bam.bai"
     output:
         bam=temp(outdir + "bamfiles/{bc}_fixed.bam"),
         bai=temp(outdir + "bamfiles/{bc}_fixed.bam.bai")
     shell:
-        movetags + " -i {input} | samtools view -hbo {output} && "
-        "samtools index {output}" 
+        movetags + " -i {input.bam} | samtools view -hbo {output.bam} && "
+        "samtools index {output.bam}" 
 
 # QC pre-dedup
 rule aflred_pre:

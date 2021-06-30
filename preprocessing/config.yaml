@@ -1,14 +1,14 @@
 # Sample related
-indir: "/mnt/AchTeraD/data/CUTseq_2/fastq/"
-samplename: "CUTseq_Turin_S1"
-outdir: "/mnt/AchTeraD/data/CUTseq_2/results/"
+indir: "/mnt/AchTeraD/data/scCUTseq_turin3/Data/Intensities/BaseCalls/"
+samplename: "EB3_S1"
+outdir: "/mnt/AchTeraD/data/scCUTseq_turin3/EB3/"
 paired: False
 lanesplit: True
 trim: True # Only for paired samples
 lanes: ["L001", "L002", "L003", "L004"] # Might need to change for NextSeq 2000 vs Nextseq500/550 or Novaseq
 
 # Semi-static
-bc: "/mnt/AchTeraD/data/CUTseq_2/barcodes.txt"
+bc: "/mnt/AchTeraD/data/96_NlaIII-barcodes.txt"
 pattern: UUUUUUUUBBBBBBBBDDDD # 8bc length
 #pattern: UUUUUUUUBBBBBBBBBBBDDDD # 11bc length
 mismatches: 1
