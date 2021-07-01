@@ -135,9 +135,9 @@ out$counts_lrr = log2(out$counts_gc)
 cat("Running Segmentation...\n")
 cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
 cna_smooth = smooth.CNA(cna)
-# cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune, 
-#                          njobs = threads, distrib = "Rparallel")
-cna_segment = segment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune)
+cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune,
+                         njobs = threads, distrib = "Rparallel")
+# cna_segment = segment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune)
 out$segments_long = data.table(cna_segment$output)
 out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
 setorder(out$segments_long, ID)

@@ -97,10 +97,10 @@ else:
     else:
         rule demux:
             input:
-                fastq1=indir + samplename + "_R1.fastq.gz",
+                fastq=indir + samplename + "_R1.fastq.gz",
                 barcodes=barcode_file
             output:
-                fastq1=expand(outdir + "demultiplexed/{bc}_R1.fq.gz", bc=barcodes),
+                fastq1=expand(outdir + "demultiplexed/{bc}.fq.gz", bc=barcodes),
                 discarded=outdir + "demultiplexed/discarded.fq.gz"
             params:
                 mismatches=mismatches,
