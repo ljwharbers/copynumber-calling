@@ -203,7 +203,7 @@ rule aflred_pre:
 if paired:
     rule deduplication:
         input:
-            bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
+            bam=outdir + "bamfiles/{bc}_fixed.bam"
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",
@@ -215,7 +215,7 @@ if paired:
 else:
     rule deduplication:
         input:
-            bam=temp(outdir + "bamfiles/{bc}_fixed.bam")
+            bam=outdir + "bamfiles/{bc}_fixed.bam"
         output:
             bam=protected(outdir + "bamfiles/{bc}.dedup_q30.bam"),
             bai=outdir + "bamfiles/{bc}.dedup_q30.bam.bai",

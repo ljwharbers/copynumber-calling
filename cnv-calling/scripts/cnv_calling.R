@@ -15,6 +15,7 @@ parser = add_argument(parser, "--bins", help = "Path to bin file", nargs = 1)
 parser = add_argument(parser, "--blacklist", help = "Path to blacklist file", nargs = 1)
 parser = add_argument(parser, "--gc", help = "Path to GC content file", nargs = 1)
 parser = add_argument(parser, "--binsize", help = "Binsize to run with", nargs = 1, type = "numeric")
+parser = add_argument(parser, "--normseg", help = "Normalize additional segments", nargs = 1, type = "character")
 parser = add_argument(parser, "--alpha", help = "alpha parameter for segmantation with DNACopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--prune", help = "undo.prune parameter for segmentation with DNAcopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--type", help = "Type of sequencing 'single' or 'bulk'", nargs = 1, type = "character")
@@ -31,10 +32,11 @@ parser = add_argument(parser, "--output", help = "Path to output file", nargs = 
 argv = parse_args(parser)
 
 # argv = list()
-# argv$counts = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/all-counts.tsv.gz"
+# argv$counts = "/mnt/AchTeraD/data/BICRO291/DG14/cnv/500000/all-counts.tsv.gz"
 # argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
 # argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
 # argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
+# argv$norm = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/normalize.tsv"
 # argv$binsize = 500000
 # argv$alpha = 0.0001
 # argv$undo.prune = 0.05
@@ -42,7 +44,7 @@ argv = parse_args(parser)
 # argv$minploidy = 1.5
 # argv$maxploidy = 6
 # argv$threads = 4
-# argv$output = "/mnt/AchTeraD/data/BICRO277/NZ170/cnv/500000/cnv.rds"
+# argv$output = "/mnt/AchTeraD/data/BICRO291/DG14/cnv/500000/cnv.rds"
 # argv$randomforest = "/mnt/AchTeraD/Documents/Projects/scCUTseq/data/cell_classifier/randomforest.rds"
 # argv$rfthreshold = 0.3
 
@@ -131,6 +133,32 @@ out$counts_gc = out$counts[, pblapply(.SD, function(sample) {
 out$counts_gc[out$counts_gc == 0] = 1e-3
 out$counts_lrr = log2(out$counts_gc)
 
+# Normalize additional segments if requested
+if(!is.na(argv$norm)) {
+  cat("Running Segment normalization...\n")
+  normal = fread(argv$norm)
+  setnames(normal, c("chr", "start", "end", "adjust"))
+  normal[, chr := as.character(chr)]
+  setkey(normal, chr, start, end)
+  setkey(out$bins, chr, start, end)
+  
+  # Get indices to normalize
+  toCorrect = foverlaps(normal, out$bins)
+  toCorrect = merge(out$bins, toCorrect[, .(chr, start, end, adjust)], by = c("chr", "start", "end"), all.x = T)
+  toCorrect[is.na(adjust), adjust := 0]
+  
+  # Get unique
+  toCorrect = unique(toCorrect, by = c("chr", "start", "end"))
+  toCorrect = toCorrect[mixedorder(toCorrect$chr)]
+  
+  # Reorder bins to mixedorder
+  out$bins = out$bins[mixedorder(out$bins$chr)]
+  
+  # Normalize the segments
+  out$counts_lrr = out$counts_lrr - toCorrect$adjust
+  out$counts_gc = 2^out$counts_lrr
+}
+
 # Make CNA object, do smoothing and segmentation
 cat("Running Segmentation...\n")
 cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
@@ -205,12 +233,12 @@ if(type == "single"){
   out$cn = CN
   
   # Scale counts_lrr
-  res = pblapply(colnames(out$counts_lrr), function(cell) out$counts_lrr[[cell]] * CN[cell])
+  res = pblapply(colnames(out$counts_lrr), function(cell) out$counts_lrr[[cell]] * CN[cell], cl = threads)
   out$counts_lrr_scaled = data.table(do.call(cbind, res))
   setnames(out$counts_lrr_scaled, colnames(out$counts_lrr))
   
   # Save to out
-  res = pblapply(colnames(out$segments_read), function(cell) out$segments_read[[cell]] * CN[cell])
+  res = pblapply(colnames(out$segments_read), function(cell) out$segments_read[[cell]] * CN[cell], cl = threads)
   out$segments_scaled = data.table(do.call(cbind, res))
   setnames(out$segments_scaled, colnames(out$segments_read))
   out$copynumber = round(out$segments_scaled)
