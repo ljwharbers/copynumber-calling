@@ -36,7 +36,7 @@ argv = parse_args(parser)
 # argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
 # argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
 # argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
-# argv$norm = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/normalize.tsv"
+# argv$norm = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/"
 # argv$binsize = 500000
 # argv$alpha = 0.0001
 # argv$undo.prune = 0.05
@@ -134,7 +134,7 @@ out$counts_gc[out$counts_gc == 0] = 1e-3
 out$counts_lrr = log2(out$counts_gc)
 
 # Normalize additional segments if requested
-if(!is.na(argv$norm)) {
+if(file_test("-f", argv$norm)) {
   cat("Running Segment normalization...\n")
   normal = fread(argv$norm)
   setnames(normal, c("chr", "start", "end", "adjust"))
@@ -157,7 +157,7 @@ if(!is.na(argv$norm)) {
   # Normalize the segments
   out$counts_lrr = out$counts_lrr - toCorrect$adjust
   out$counts_gc = 2^out$counts_lrr
-}
+} else cat("Warning, normalization file does not exist.. skipping..\n")
 
 # Make CNA object, do smoothing and segmentation
 cat("Running Segmentation...\n")
