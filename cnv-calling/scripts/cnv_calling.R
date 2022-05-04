@@ -5,7 +5,7 @@
 ## Script to perform cnv calling from a list of binned read counts
 
 ## Load/install packages
-packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools", "randomForest")
+packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools", "randomForest", "copynumber")
 invisible(sapply(packages, function(x) suppressMessages(require(x, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE))))
 
 ## Parse arguments
@@ -16,8 +16,11 @@ parser = add_argument(parser, "--blacklist", help = "Path to blacklist file", na
 parser = add_argument(parser, "--gc", help = "Path to GC content file", nargs = 1)
 parser = add_argument(parser, "--binsize", help = "Binsize to run with", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--normseg", help = "Normalize additional segments", nargs = 1, type = "character")
+parser = add_argument(parser, "--removethreshold", help = "Remove samples with fewer reads than this (0 to not remove any samples)", nargs = 1, type = "numeric", default = 3e5)
+parser = add_argument(parser, "--segmentation", help = "Type of segmentation (single or joint)", nargs = 1, type = "character")
 parser = add_argument(parser, "--alpha", help = "alpha parameter for segmantation with DNACopy", nargs = 1, type = "numeric")
 parser = add_argument(parser, "--prune", help = "undo.prune parameter for segmentation with DNAcopy", nargs = 1, type = "numeric")
+parser = add_argument(parser, "--penalty", help = "Penalty value (gamma) for joint segmentation with mpcf from copynumber", nargs = 1, type = "numeric", default = 10)
 parser = add_argument(parser, "--type", help = "Type of sequencing 'single' or 'bulk'", nargs = 1, type = "character")
 parser = add_argument(parser, "--randomforest", help = "Path to randomforest model for single cell classification", 
                       default = NULL, nargs = 1, type = "character")
@@ -40,6 +43,7 @@ argv = parse_args(parser)
 # argv$binsize = 500000
 # argv$alpha = 0.0001
 # argv$undo.prune = 0.05
+# argv$penalty = 10
 # argv$type = "single"
 # argv$minploidy = 1.5
 # argv$maxploidy = 6
@@ -73,11 +77,16 @@ if(!argv$type %in% c("single", "bulk")) {
 # Make list of all data that needs to be included in final output
 out = list()
 out$counts = fread(argv$counts)
+out$removethreshold = argv$removethreshold
+# Remove low read samples
+out$counts = out$counts[, colnames(out$counts)[colSums(out$counts) >= out$removethreshold], with = F]
 out$gc = fread(argv$gc)
 out$blacklist = fread(argv$blacklist)
 out$bins = fread(argv$bins)
+out$penalty = argv$penalty
 out$alpha = argv$alpha
 out$undo.prune = argv$prune
+out$segmentation_type = argv$segmentation
 
 # Set parameters
 type = argv$type
@@ -86,6 +95,7 @@ samples = colnames(out$counts)
 minploidy = argv$minploidy
 maxploidy = argv$maxploidy
 threads = argv$threads
+
 output = argv$output
 if(!is.na(argv$randomforest)) rf = readRDS(argv$randomforest)
 rfthreshold = argv$rfthreshold
@@ -159,27 +169,53 @@ if(file_test("-f", argv$norm)) {
   out$counts_gc = 2^out$counts_lrr
 } else cat("Warning, normalization file does not exist.. skipping..\n")
 
-# Make CNA object, do smoothing and segmentation
-cat("Running Segmentation...\n")
-cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
-cna_smooth = smooth.CNA(cna)
-cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune,
-                         njobs = threads, distrib = "Rparallel")
-# cna_segment = segment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune)
-out$segments_long = data.table(cna_segment$output)
-out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
-setorder(out$segments_long, ID)
 
-# Add segments to output list
-segments_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(loc.start, num.mark), 
-                                     seg.mean = rep(seg.mean, num.mark)), by = .(ID)]
-#segments_rep = segments_rep[mixedorder(segments_rep$chr)]
-#setorder(segments_rep, ID)
-segments_rep[, bin_num := rep(1:nrow(out$counts_lrr), ncol(out$counts_lrr))]
-out$segments = dcast(segments_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
+if(out$segmentation_type == "single") {
+  # Make CNA object, do smoothing and segmentation
+  cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
+  cna_smooth = smooth.CNA(cna)
+  
+  
+  cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune,
+                           njobs = threads, distrib = "Rparallel")
+  
+  
+  # Restructure
+  out$segments_long = data.table(cna_segment$output)
+  out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
+  setorder(out$segments_long, ID)
+  out$segments_long[, ID := gsub('X', '', ID)]
+  
+  # Add segments to output list
+  segments_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(loc.start, num.mark), 
+                                       seg.mean = rep(seg.mean, num.mark)), by = .(ID)]
+  #segments_rep = segments_rep[mixedorder(segments_rep$chr)]
+  #setorder(segments_rep, ID)
+  segments_rep[, bin_num := rep(1:nrow(out$counts_lrr), ncol(out$counts_lrr))]
+  out$segments = dcast(segments_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
+  
+  # Reorder out$segments to match sample orders of previous analysis
+  setcolorder(out$segments, colnames(out$counts_lrr))
+}
+if(out$segmentation_type == "joint") {
+  # Multipcf
+  mpcf_input = as.data.frame(cbind(out$bins[, 1:2], out$counts_lrr))
+  mpcf = multipcf(mpcf_input, gamma = out$penalty, normalize = F)
+  
+  # Restructure
+  out$segments_long = melt(data.table(mpcf), id.vars = c("chrom", "start.pos", "end.pos", "arm", "n.probes"), variable.name = "ID")
+  setnames(out$segments_long, "n.probes", "num.mark")
+  mpcf_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(start.pos, num.mark), end = rep(end.pos, num.mark), seg.mean = rep(value, num.mark)), by = ID]
+  
+  # Set order
+  setorder(mpcf_rep, ID, chr, start)
+  mpcf_rep[, bin_num := 1:.N, by = ID]
+  out$segments = dcast(mpcf_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
+  
+  # Reorder out$segments to match sample orders of previous analysis
+  setcolorder(out$segments, colnames(out$counts_lrr))
+}
 
-# Reorder out$segments to match sample orders of previous analysis
-setcolorder(out$segments, colnames(out$counts_lrr))
 
 # Modify log ratio segments to contain median normalized read counts per bin
 median_segments = pblapply(colnames(out$counts_gc), function(cell) {

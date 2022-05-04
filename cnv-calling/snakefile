@@ -8,12 +8,15 @@ base = config["run_info"]["base_path"]
 run = config["run_info"]["run"]
 library = config["run_info"]["library"]
 threads = config["run_info"]["threads"]
+removethreshold = config['analysis']['removethreshold']
 alpha=config["cnv_calling"]["alpha"]
 sdprune=config["cnv_calling"]["sdprune"]
 if config['cnv_calling']['single_cell']:
 	run_type='single'
 else:
 	run_type='bulk'
+segmentation_type = config['cnv_calling']['segmentation_type']
+penalty = config['cnv_calling']['penalty']
 use_rf=config['run_info']['use_rf']
 rfthreshold = config['run_info']['rf_threshold']
 
@@ -40,8 +43,6 @@ samples = [x.replace(".dedup_q30.bam", "") for x in samples]
 
 rule all:
 	input:
-		expand(full_path + "cnv/{binsize}/plots/profiles/{sample}.png",
-		sample = samples, binsize = binsize),
 		expand(full_path + "cnv/{binsize}/plots/genomewide/genomewideheatmap.png",
 		binsize = binsize)
 
@@ -79,11 +80,17 @@ rule combineCounts:
 	shell:
 		"paste {input} | gzip > {output}"
 
-# Set randomforest parameter
+# Set randomforest parameters
 if run_type and use_rf:
 	rf="--randomforest " + randomforest + " --rfthreshold " + str(rfthreshold)
 else:
 	rf=""
+
+# Set segmentation parameters
+if segmentation_type == "single":
+	segment_params="--segmentation single --prune " + str(sdprune) + " --alpha " + str(alpha)
+if segmentation_type == "joint":
+	segment_params="--segmentation joint --penalty " + str(penalty)
 
 # Copy number calling
 rule callCNVs:
@@ -95,28 +102,25 @@ rule callCNVs:
 	output:
 		full_path + "cnv/{binsize}/cnv.rds"
 	params:
-		alpha=alpha,
-		sdprune=sdprune,
 		run_type=run_type,
 		binsize="{binsize}",
 		rf=rf,
-		normseg=normseg
+		normseg=normseg,
+		removethreshold=removethreshold,
+		segment_params=segment_params
 	threads: 
 		threads
 	shell:
 		"Rscript " + cnv + " --counts {input.counts} --bins {input.bins} --binsize {params.binsize} "
 		"--blacklist {input.blacklist} --normseg {params.normseg} --gc {input.gc} "
-		"--alpha {params.alpha} --prune {params.sdprune} "
-		"--type {params.run_type} {params.rf} --threads {threads} --output {output} "
-
+		"{params.segment_params} --type {params.run_type} {params.rf} "
+		"--removethreshold {params.removethreshold} --threads {threads} --output {output}"
 
 # Generate plots
 rule generatePlots:
 	input:
 		full_path + "cnv/{binsize}/cnv.rds"
 	output:
-		expand(full_path + "cnv/{{binsize}}/plots/profiles/{sample}.png",
-			sample = samples),
 		full_path + "cnv/{binsize}/plots/genomewide/genomewideheatmap.png"
 	params:
 		outdir=full_path + "cnv/{binsize}/plots/",

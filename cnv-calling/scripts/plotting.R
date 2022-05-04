@@ -80,7 +80,8 @@ if (argv$runtype == 'single'){
                          " | reads: ", cnv$stats[sample == id, total_reads],
                          " | avg reads/bin: ", round(cnv$stats[sample == id, mean_reads]),
                          " | spikiness: ", round(cnv$stats[sample == id, spikiness], 3),
-                         " | RF classifier: ", cnv$stats[sample == id, classifier_prediction])
+                         " | RF classifier: ", cnv$stats[sample == id, classifier_prediction],
+                         " | segmentation type: ", cnv$segmentation_type)
     
     # save plot
     plot = ggplot(dt, aes(x = bin)) +
@@ -163,7 +164,8 @@ if (argv$runtype == 'single'){
     stat_string = paste0(id,
                          " | reads: ", cnv$stats[sample == id, total_reads],
                          " | avg reads/bin: ", round(cnv$stats[sample == id, mean_reads]),
-                         " | spikiness: ", "placeholder")
+                         " | spikiness: ", round(cnv$stats[sample == id, spikiness], 3),
+                         " | segmentation type: ", cnv$segmentation_type)
     
     # save plot
     plot = ggplot(dt, aes(x = bin)) +

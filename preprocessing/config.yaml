@@ -1,7 +1,7 @@
 # Sample related
-indir: "/mnt/AchTeraD/data/scCUTseq_turin3/Data/Intensities/BaseCalls/"
-samplename: "EB3_S1"
-outdir: "/mnt/AchTeraD/data/scCUTseq_turin3/EB3/"
+indir: "/mnt/AchTeraD/data/BICRO229/fastq/"
+samplename: "NZ74_S9"
+outdir: "/mnt/AchTeraD/data/BICRO229/NZ74/new/"
 paired: False
 lanesplit: True
 trim: True # Only for paired samples

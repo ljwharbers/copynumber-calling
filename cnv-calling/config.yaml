@@ -1,29 +1,38 @@
 run_info:
-  run: "CUTseq_Turin5"
-  library: "EB5"
-  base_path: "/mnt/AchTeraD/data/"
+  run: "brca"
+  library: "brca1"
+  base_path: "/mnt/AchTeraD/data/scCUTseq/"
   threads: 32
-  use_rf: False
+  use_rf: True
   rf_threshold: 0.3 # 0.5 is default for most models. You can check the best threshold using an ROC curve.
 
 
 analysis:
-  binsize: [50000]
-  readlength: 76 
+  binsize: [500000]
+  readlength: 150 
   # This should be the closest possible to the given bin files. 
   # i.e. if your sequence reads are of length 130 (due to linkers) you should use 150 here.
   # Possible inputs currently: 48, 76, 150
+  
+  removethreshold: 300000 
+  # Number of minimum reads for cells to be analysed (important for joint segmentation) 
+  # to remove noisy cells that can influence the joint segmentation performance
 
 # Path to bin/blacklist/GC-content files
 bin_path: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/"
-blacklist: "hg19-blacklist.v2.bed" # Should be in bin_path/ directory
+blacklist: "hg19-blacklist.v2_adjusted.bed" # Should be in bin_path/ directory
+normseg: "normalize.tsv" # Should be in bin_path/ directory
+#normseg: ""
 
 cnv_calling:
   # single cell or bulk
-  single_cell: False
+  single_cell: True
+  segmentation_type: "joint"
+
   # Parameters for DNA copy segmentation
-  alpha: 0.0001
-  sdprune: 0.05
+  alpha: 0.0001 # Used for single sample segmentation
+  sdprune: 0.05 # Used for single sample segmentation
+  penalty: 10 # Used for joint segmentation
 
 # Script paths
 cnv: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/scripts/cnv_calling.R"
