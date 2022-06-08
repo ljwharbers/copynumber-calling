@@ -109,14 +109,14 @@ if (argv$runtype == 'single'){
   cat("Calculate distances and clustering samples...\n")
   hc = hclust(dist(t(dt[, 7:ncol(dt)])), method = "average")
   dhc = as.dendrogram(hc)
-  
+
   # Rectangular lines
   ddata = dendro_data(dhc, type = "rectangle")
-  
+
   # Plot Dendrogram
-  dendro = ggplot(ggdendro::segment(ddata)) + 
+  dendro = ggplot(ggdendro::segment(ddata)) +
     geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
-    coord_flip() + 
+    coord_flip() +
     scale_y_reverse(expand = c(0, 0)) +
     scale_x_continuous(expand = c(0.004, 0.004)) +
     theme_dendro()
@@ -144,9 +144,9 @@ if (argv$runtype == 'single'){
           axis.title = element_blank())
   
   # Combine plots and save
-  combined = plot_grid(dendro, heatmap,  align = "h", rel_widths = c(0.2, 2), ncol = 2)
+  #combined = plot_grid(dendro, heatmap,  align = "h", rel_widths = c(0.2, 2), ncol = 2)
   cat("Plotting Genomewide heatmap...\n")
-  ggsave(filename = paste0(argv$outdir, "/genomewide/genomewideheatmap.png"), plot = combined,
+  ggsave(filename = paste0(argv$outdir, "/genomewide/genomewideheatmap.png"), plot = heatmap,
          width = 20, height = 28, dpi = 900)
 } else {
   pblapply(samples, function(id) {
@@ -174,7 +174,7 @@ if (argv$runtype == 'single'){
       scale_color_manual(values = colors, drop = F) +
       scale_y_continuous(limits = c(-2, 4), labels=comma_format(accuracy = 1), breaks = pretty_breaks(6)) +
       scale_x_continuous(expand = c(0, 0)) +
-      labs(y = "Copy Number", x = "", subtitle = stat_string) +
+      labs(y = "Log2 ratio", x = "", subtitle = stat_string) +
       geom_vline(data = chr_bounds, aes(xintercept = max), linetype = 2) +
       geom_text(data = chr_bounds, aes(x = mid, y = -Inf, label = chr), vjust = -0.5, hjust = "center", inherit.aes = F) +
       theme(legend.position = "none",
@@ -215,7 +215,7 @@ if (argv$runtype == 'single'){
     geom_linerange(aes(ymin = start_cum, ymax = end_cum, x = variable, color = value), size = 2) +
     coord_flip() +
     scale_color_gradient2(midpoint = 0, low = "blue", high = "red", limits = c(-2, 4), oob = scales::squish) +
-    labs(color = "Copy Number") + 
+    labs(color = "Log2 ratio") + 
     scale_y_continuous(expand = c(0, 0), labels = chr_bounds$chr, breaks = chr_bounds$mid_bp) + 
     geom_hline(data = chr_bounds, aes(yintercept = end_bp), linetype = 1, size = .8) +
     theme(axis.text.y = element_blank(),

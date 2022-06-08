@@ -79,7 +79,7 @@ out = list()
 out$counts = fread(argv$counts)
 out$removethreshold = argv$removethreshold
 # Remove low read samples
-out$counts = out$counts[, colnames(out$counts)[colSums(out$counts) >= out$removethreshold], with = F]
+out$counts = out$counts[, colnames(out$counts)[colSums(out$counts, na.rm = T) >= out$removethreshold], with = F]
 out$gc = fread(argv$gc)
 out$blacklist = fread(argv$blacklist)
 out$bins = fread(argv$bins)
