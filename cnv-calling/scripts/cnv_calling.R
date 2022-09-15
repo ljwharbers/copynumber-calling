@@ -136,7 +136,7 @@ out$bins = out$bins[indices]
 # Normalize by mean and GC correction
 cat("Running GC normalization...\n")
 out$counts_gc = out$counts[, pblapply(.SD, function(sample) {
-  lowess.gc(out$gc$V1, (sample+1 / mean(sample+1)))
+  lowess.gc(out$gc$V1, (sample + 1 / mean(sample + 1)))
   }, cl = threads)]
 
 # Add 0.001 to 0 ratios and make log ratios
@@ -144,7 +144,7 @@ out$counts_gc[out$counts_gc == 0] = 1e-3
 out$counts_lrr = log2(out$counts_gc)
 
 # Normalize additional segments if requested
-if(file_test("-f", argv$norm)) {
+if (file_test("-f", argv$norm)) {
   cat("Running Segment normalization...\n")
   normal = fread(argv$norm)
   setnames(normal, c("chr", "start", "end", "adjust"))
@@ -167,16 +167,18 @@ if(file_test("-f", argv$norm)) {
   # Normalize the segments
   out$counts_lrr = out$counts_lrr - toCorrect$adjust
   out$counts_gc = 2^out$counts_lrr
-} else cat("Warning, normalization file does not exist.. skipping..\n")
+} else {
+  cat("Warning, normalization file does not exist.. skipping..\n")
+}
 
 
-if(out$segmentation_type == "single") {
+if (out$segmentation_type == "single") {
   # Make CNA object, do smoothing and segmentation
-  cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type="logratio", sampleid=colnames(out$counts_lrr)) 
+  cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type = "logratio", sampleid = colnames(out$counts_lrr)) 
   cna_smooth = smooth.CNA(cna)
   
   
-  cna_segment = parSegment(cna_smooth, alpha=out$alpha, min.width=5, undo.splits="prune", undo.prune=out$undo.prune,
+  cna_segment = parSegment(cna_smooth, alpha = out$alpha, min.width = 5, undo.splits = "prune", undo.prune = out$undo.prune,
                            njobs = threads, distrib = "Rparallel")
   
   
@@ -184,7 +186,7 @@ if(out$segmentation_type == "single") {
   out$segments_long = data.table(cna_segment$output)
   out$segments_long = out$segments_long[mixedorder(out$segments_long$chrom)]
   setorder(out$segments_long, ID)
-  out$segments_long[, ID := gsub('X', '', ID)]
+  out$segments_long[, ID := gsub("X", "", ID)]
   
   # Add segments to output list
   segments_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(loc.start, num.mark), 

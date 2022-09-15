@@ -1,17 +1,17 @@
 # Sample related
-indir: "/mnt/AchTeraD/data/BICRO229/fastq/"
-samplename: "NZ74_S9"
-outdir: "/mnt/AchTeraD/data/BICRO229/NZ74/new/"
+indir: "/mnt/sequencing/BICRO330/fastq/"
+samplename: "CD27"
+outdir: "/mnt/sequencing/BICRO330/CD27/"
 paired: False
-lanesplit: True
+lanesplit: False
 trim: True # Only for paired samples
 lanes: ["L001", "L002", "L003", "L004"] # Might need to change for NextSeq 2000 vs Nextseq500/550 or Novaseq
 
 # Semi-static
-bc: "/mnt/AchTeraD/data/96_NlaIII-barcodes.txt"
-pattern: UUUUUUUUBBBBBBBBDDDD # 8bc length
-#pattern: UUUUUUUUBBBBBBBBBBBDDDD # 11bc length
-mismatches: 1
+bc: "/mnt/AchTeraD/data/384_NlaIII-barcodes.txt"
+#pattern: UUUUUUUUBBBBBBBBDDDD # 8bc length
+pattern: UUUUUUUUBBBBBBBBBBBDDDD # 11bc length
+mismatches: 2
 
 # Reference
 ref: "/mnt/AchTeraD/Documents/references/hg19/hg19.fa"
