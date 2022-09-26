@@ -218,6 +218,20 @@ if(out$segmentation_type == "joint") {
   setcolorder(out$segments, colnames(out$counts_lrr))
 }
 
+#### If including mergeLevels need to add aCGH package and need to adjust following segments to include merged segments instead of non-merged segments
+# # MergeLevels
+# segments_merged = pblapply(colnames(out$segments), function(cell) {
+#   
+#   # Run mergeLevels and transform to data.table
+#   merged = mergeLevels(out$counts_lrr[[cell]], 
+#                        out$segments[[cell]], 
+#                        pv.thres = .1, 
+#                        verbose = 0)$vecMerged |> data.table()
+#   setnames(merged, cell)
+#   return(merged)
+#   
+# }, cl = threads)
+# out$segments_merged = do.call(cbind, segments_merged)
 
 # Modify log ratio segments to contain median normalized read counts per bin
 median_segments = pblapply(colnames(out$counts_gc), function(cell) {
