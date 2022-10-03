@@ -65,24 +65,19 @@ argv = parse_args(parser)
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
-  cat("Error: --type argument has to be either 'single' or 'bulk'")
-  stop()
+  stop("Error: --type argument has to be either 'single' or 'bulk'")
 }
 if(!file.exists(argv$gc)) {
-  cat("Error: --gc file does not exist")
-  stop()
+  stop("Error: --gc file does not exist")
 }
 if(!file.exists(argv$blacklist)) {
-  cat("Error: --blacklist file does not exist")
-  stop()
+  stop("Error: --blacklist file does not exist")
 }
 if(!file.exists(argv$bins)) {
-  cat("Error: --bins file does not exist")
-  stop()
+  stop("Error: --bins file does not exist")
 }
 if(!argv$type %in% c("single", "bulk")) {
-  cat("Error: --type argument has to be either 'single' or 'bulk'")
-  stop()
+  stop("Error: --type argument has to be either 'single' or 'bulk'")
 }
 
 # Make list of all data that needs to be included in final output
@@ -114,8 +109,7 @@ if(argv$sex == "female") {
 } else if(argv$sex == "male") {
   ismale = TRUE
 } else {
-  cat("Error: --sex must be either 'male' or 'female'")
-  stop()
+  stop("Error: --sex must be either 'male' or 'female'")
 }
 
 
@@ -162,7 +156,7 @@ out$bins = out$bins[indices]
 out$counts = out$counts + 1
 
 # Normalize by mean and GC correction
-cat("Running GC normalization...\n")
+message("Running GC normalization...")
 out$counts_gc = out$counts[, pblapply(.SD, function(sample) {
   lowess.gc(out$gc$V1, (sample + 1 / mean(sample + 1)))
 }, cl = threads)]
@@ -173,7 +167,7 @@ out$counts_lrr = log2(out$counts_gc)
 
 # Normalize additional segments if requested
 if (file_test("-f", argv$norm)) {
-  cat("Running Segment normalization...\n")
+  message("Running Segment normalization...")
   normal = fread(argv$norm)
   setnames(normal, c("chr", "start", "end", "adjust"))
   normal[, chr := as.character(chr)]
@@ -196,11 +190,12 @@ if (file_test("-f", argv$norm)) {
   out$counts_lrr = out$counts_lrr - toCorrect$adjust
   out$counts_gc = 2^out$counts_lrr
 } else {
-  cat("Warning, normalization file does not exist.. skipping..\n")
+  message("Warning, normalization file does not exist, skipping...")
 }
 
 
 if (out$segmentation_type == "single") {
+  message("Segmenting profiles using CBS...")
   # Make CNA object, do smoothing and segmentation
   cna = CNA(out$counts_lrr, out$bins$chr, out$bins$start, data.type = "logratio", sampleid = colnames(out$counts_lrr)) 
   cna_smooth = smooth.CNA(cna)
@@ -228,6 +223,7 @@ if (out$segmentation_type == "single") {
   setcolorder(out$segments, colnames(out$counts_lrr))
 }
 if(out$segmentation_type == "joint") {
+  message("Segmenting profiles using multipcf...")
   # Multipcf
   mpcf_input = as.data.frame(cbind(out$bins[, 1:2], out$counts_lrr))
   mpcf = multipcf(mpcf_input, gamma = out$penalty, normalize = F, verbose = F)
@@ -250,7 +246,7 @@ if(out$segmentation_type == "joint") {
 #### If including mergeLevels need to add aCGH package and need to adjust following segments to include merged segments instead of non-merged segments
 # MergeLevels
 segments_merged = pblapply(colnames(out$segments), function(cell) {
-
+  message("Merging similar segments...")
   # # Run mergeLevels and transform to data.table
   # merged = mergeLevels(out$counts_lrr[[cell]],
   #                      out$segments[[cell]],
@@ -321,7 +317,7 @@ setnames(out$segments_read, colnames(out$counts_gc))
 
 # Perform integer copy number calling if it's single cell data
 if(type == "single"){
-  
+  message("Calculating integer copy numbers...")
   # # Initialize CN inference variables for SoS method -- Code adapted from ginkgo pipeline
   # n_cells = ncol(out$segments_read)
   # ploidy = rbind(c(0,0), c(0,0))
@@ -392,6 +388,7 @@ if(type == "single"){
   
   
   # Write stats
+  message("Writing output...")
   out$stats = data.table(
     sample = samples
   )
@@ -445,3 +442,4 @@ if(type == "single"){
 
 # Write output
 saveRDS(out, output)
+message("Finished.")
