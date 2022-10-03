@@ -245,8 +245,8 @@ if(out$segmentation_type == "joint") {
 
 #### If including mergeLevels need to add aCGH package and need to adjust following segments to include merged segments instead of non-merged segments
 # MergeLevels
+message("Merging similar segments...")
 segments_merged = pblapply(colnames(out$segments), function(cell) {
-  message("Merging similar segments...")
   # # Run mergeLevels and transform to data.table
   # merged = mergeLevels(out$counts_lrr[[cell]],
   #                      out$segments[[cell]],
