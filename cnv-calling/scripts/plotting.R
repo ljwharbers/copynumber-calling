@@ -14,17 +14,17 @@ parser = add_argument(parser, "--threads", help = "Number of threads to use", na
 parser = add_argument(parser, "--outdir", help = "Path to output directory", nargs = 1)
 argv = parse_args(parser)
 
+# argv = list()
+# argv$rds = "/mnt/AchTeraD/data/scCUTseq/prostate/P3/cnv/500000/cnv.rds"
+# argv$runtype = "single"
+# argv$outdir = "/mnt/AchTeraD/data/scCUTseq/prostate/P3/cnv/500000/plots/"
+# argv$threads = 20
+
 # Set parameters
 threads = argv$threads
 
 # Set cowplot theme as default theme
 theme_set(theme_cowplot())
-
-# argv = list()
-# argv$rds = "/mnt/AchTeraD/data/BICRO277/NZ169/cnv/500000/cnv.rds"
-# argv$runtype = "single"
-# argv$outdir = "/mnt/AchTeraD/data/BICRO277/NZ169/cnv/500000/plots/"
-# threads = 20
 
 # # 
 # # Make outdir if not exists
@@ -68,7 +68,7 @@ samples = colnames(cnv$counts_gc)
 if (argv$runtype == 'single'){
   cat("Plotting individual profiles...\n")
   pblapply(samples, function(id) {
-    dt = cbind(bins, cnv$copynumber[[id]], cnv$counts_gc[[id]] * cnv$cn[id])
+    dt = cbind(bins, cnv$copynumber[[id]], cnv$counts_gc[[id]] * cnv$ploidies[sample == id, ploidy])
     setnames(dt, c("chr", "start", "end", "bin", "end_cum", "start_cum", "cn", "raw"))
     
     dt[, cn := ifelse(cn < 11, cn, 11)]
