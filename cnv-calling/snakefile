@@ -17,6 +17,11 @@ else:
 	run_type='bulk'
 segmentation_type = config['cnv_calling']['segmentation_type']
 penalty = config['cnv_calling']['penalty']
+minploidy=config['cnv_calling']['minploidy']
+maxploidy=config['cnv_calling']['maxploidy']
+minpurity=config['cnv_calling']['minpurity']
+maxpurity=config['cnv_calling']['maxpurity']
+sex=config['cnv_calling']['sex']
 use_rf=config['run_info']['use_rf']
 rfthreshold = config['run_info']['rf_threshold']
 
@@ -107,6 +112,11 @@ rule callCNVs:
 		rf=rf,
 		normseg=normseg,
 		removethreshold=removethreshold,
+		minploidy=minploidy,
+		maxploidy=maxploidy,
+		minpurity=minpurity,
+		maxpurity=maxpurity,
+		sex=sex,
 		segment_params=segment_params
 	threads: 
 		threads
@@ -114,7 +124,9 @@ rule callCNVs:
 		"Rscript " + cnv + " --counts {input.counts} --bins {input.bins} --binsize {params.binsize} "
 		"--blacklist {input.blacklist} --normseg {params.normseg} --gc {input.gc} "
 		"{params.segment_params} --type {params.run_type} {params.rf} "
-		"--removethreshold {params.removethreshold} --threads {threads} --output {output}"
+		"--removethreshold {params.removethreshold} --minploidy {params.minploidy} "
+		"--maxploidy {params.maxploidy} --minpurity {params.minpurity} --maxpurity {params.maxpurity} "
+		"--sex {params.sex} --threads {threads} --output {output}"
 
 # Generate plots
 rule generatePlots:
