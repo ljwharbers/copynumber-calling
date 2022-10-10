@@ -32,7 +32,7 @@ cnv_calling:
   # Parameters for DNA copy segmentation
   alpha: 0.0001 # Used for single sample segmentation
   sdprune: 0.05 # Used for single sample segmentation
-  penalty: 7 # Used for joint segmentation (default 40)
+  penalty: 6 # Used for joint segmentation (default 40)
   
   # Integer copy number calling parameters
   minploidy: 1.7
