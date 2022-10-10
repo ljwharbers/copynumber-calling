@@ -1,12 +1,5 @@
-21	14550919	15606100	Extra blacklist
-2	32755418	33264869	Extra blacklist
-7	105301193	105806585	Extra blacklist
-14	77445366	77948723	Extra blacklist
-10	17841962	18254319	Extra blacklist
 10	38726200	42489100	High Signal Region
 10	42524900	42819200	High Signal Region
-10	46365778	49279836	Extra blacklist
-10	51309892	51905878	Extra blacklist
 10	98560400	98562500	High Signal Region
 10	135437600	135534700	High Signal Region
 11	0	196300	High Signal Region
@@ -19,7 +12,6 @@
 11	6830800	6832700	High Signal Region
 11	10528500	10532700	Low Mappability
 11	11267200	11269500	High Signal Region
-11	47489148	55777503	Extra Blacklist
 11	48700000	48964800	High Signal Region
 11	50505600	50523400	High Signal Region
 11	50635500	51200100	High Signal Region
@@ -322,7 +314,6 @@
 15	30358500	30919300	High Signal Region
 15	31136500	31143800	Low Mappability
 15	32445900	32915200	High Signal Region
-15	40832525	46192682	Extra blacklist
 15	56603300	56608500	High Signal Region
 15	69255900	69257800	High Signal Region
 15	72085400	72090500	High Signal Region
@@ -335,12 +326,9 @@
 15	85732700	85814600	High Signal Region
 15	102283600	102305300	Low Mappability
 15	102411600	102531300	High Signal Region
-16	14788741	19034663	Extra blacklist
-16	28565403	47147572	Extra blacklist
 16	32923000	33427100	High Signal Region
 16	33726300	34197900	High Signal Region
 16	35191100	46501300	High Signal Region
-16	69116069	71196525	Extra blacklist
 16	90155800	90354700	Low Mappability
 17	66700	167600	High Signal Region
 17	964700	969400	High Signal Region
@@ -359,12 +347,10 @@
 17	41378900	41402100	High Signal Region
 17	41432200	41467700	High Signal Region
 17	43588700	43718700	High Signal Region
-17	44441101	44806071	Extra blacklist
 17	45108700	45130400	Low Mappability
 17	45211900	45283300	High Signal Region
 17	45612500	45671300	Low Mappability
 17	51182300	51184600	Low Mappability
-17	56644725	59347235	Extra blacklist
 17	64794200	64796200	Low Mappability
 17	78717100	78719200	Low Mappability
 17	81151700	81195200	Low Mappability
@@ -415,7 +401,6 @@
 18	77772000	77796400	High Signal Region
 19	7514300	7516900	High Signal Region
 19	8850900	8910700	High Signal Region
-19	20772033	24074556	Extra blacklist
 19	24182700	24198600	High Signal Region
 19	24501500	27995100	High Signal Region
 19	35349800	35357000	High Signal Region
@@ -431,17 +416,14 @@
 1	2582800	2693900	High Signal Region
 1	4362200	4364300	High Signal Region
 1	5714800	5736800	High Signal Region
-1	13181973	13710520	Extra blacklist
 1	16821600	17301500	High Signal Region
 1	38076400	38078300	Low Mappability
 1	91836500	91854100	High Signal Region
 1	120531600	120896300	High Signal Region
 1	120926100	121149300	High Signal Region
 1	121341500	145396500	High Signal Region
-1	146110289	146589967	Extra blacklist
 1	147424800	147731700	High Signal Region
 1	147832000	149058800	High Signal Region
-1	149452158	149865018	Extra blacklist
 1	152185700	152191100	High Signal Region
 1	156185300	156187600	High Signal Region
 1	161392300	161442700	High Signal Region
@@ -457,7 +439,6 @@
 20	25984200	26150000	Low Mappability
 20	26184300	29519700	High Signal Region
 20	29546800	29853000	High Signal Region
-20	31743947	35572945	Extra blacklist
 20	46521400	46531600	High Signal Region
 20	47130700	47133900	High Signal Region
 20	62887700	63025500	Low Mappability
@@ -491,14 +472,11 @@
 2	95471500	95565900	Low Mappability
 2	97718400	98232300	High Signal Region
 2	109814800	109817200	High Signal Region
-2	110843463	111399669	Extra Blacklist
 2	114147600	114441900	High Signal Region
-2	130855547	132154363	Extra Blacklist
 2	132763200	132836700	Low Mappability
 2	132946300	133122100	High Signal Region
 2	149638400	149640300	Low Mappability
 2	162134100	162148700	High Signal Region
-2	203254275	204381418	Extra blacklist
 2	230044500	230046500	High Signal Region
 2	243052100	243199300	High Signal Region
 3	612200	662600	Low Mappability
@@ -554,9 +532,7 @@
 3	197798000	198022400	High Signal Region
 4	0	69600	High Signal Region
 4	1420500	1478600	High Signal Region
-4	4327670	18635967	Extra blacklist
 4	9199300	9371400	High Signal Region
-4	38899596	41046356	Extra blacklist
 4	40293300	40341800	High Signal Region
 4	49073900	52683800	High Signal Region
 4	68263300	68273300	High Signal Region
@@ -573,7 +549,6 @@
 4	190756300	190770700	High Signal Region
 4	190795300	191154200	High Signal Region
 5	0	85500	High Signal Region
-5	0	7813939	Extra blacklist
 5	629900	651800	High Signal Region
 5	1326400	1334600	High Signal Region
 5	2144800	2147800	High Signal Region
@@ -594,7 +569,6 @@
 5	46239900	46241800	Low Mappability
 5	46265500	49594200	High Signal Region
 5	60055500	60058300	Low Mappability
-5	68622109	70861842	Extra blacklist
 5	68830000	70669400	High Signal Region
 5	71145800	71149800	High Signal Region
 5	73981300	74008300	High Signal Region
@@ -775,14 +749,12 @@
 7	0	49700	High Signal Region
 7	1311000	1313200	High Signal Region
 7	45290700	45292600	Low Mappability
-7	55945299	62399594	Extra blacklist
 7	56437000	56447500	High Signal Region
 7	57544900	57557600	High Signal Region
 7	57597800	57782700	High Signal Region
 7	57884200	62120800	High Signal Region
 7	62403000	62404900	High Signal Region
 7	64929600	65063200	High Signal Region
-7	62884581	76890713	Extra blacklist
 7	84878700	84884900	High Signal Region
 7	100549000	100611600	High Signal Region
 7	100634800	100648100	High Signal Region
@@ -822,8 +794,6 @@
 8	144743300	144752700	High Signal Region
 9	6593800	6595700	High Signal Region
 9	35903000	35915300	High Signal Region
-9	38660992	40399108	Extra blacklist
-9	40743054	44729770	Extra blacklist
 9	40815000	43489000	High Signal Region
 9	43684600	44102400	High Signal Region
 9	44852100	44881200	High Signal Region
@@ -848,7 +818,6 @@ X	58329700	58433500	High Signal Region
 X	58461000	61920100	High Signal Region
 X	62005100	62007000	High Signal Region
 X	78057800	78060000	High Signal Region
-X	88898351	93857711	Extra blacklist
 X	99512200	99516600	High Signal Region
 X	101446100	101744100	High Signal Region
 X	108258600	108312300	High Signal Region

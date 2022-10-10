@@ -5,7 +5,7 @@
 ## Script to perform cnv calling from a list of binned read counts
 
 ## Load/install packages
-packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools", "randomForest", "copynumber", "ASCAT.sc", "aCGH")
+packages = c("data.table", "argparser", "DNAcopy", "ParDNAcopy", "pbapply", "gtools", "randomForest", "copynumber", "ASCAT.sc", "aCGH", "matrixStats")
 invisible(sapply(packages, function(x) suppressMessages(require(x, character.only = TRUE, quietly = TRUE, warn.conflicts = FALSE))))
 
 ## Parse arguments
@@ -40,19 +40,19 @@ parser = add_argument(parser, "--output", help = "Path to output file", nargs = 
 argv = parse_args(parser)
 
 # argv = list()
-# argv$counts = "/mnt/sequencing/BICRO328/CD26/cnv/500000/all-counts.tsv.gz"
-# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_76_bwa"
+# argv$counts = "/mnt/AchTeraD/data/scCUTseq/prostate/P3_subs/cnv/500000/all-counts.tsv.gz"
+# argv$gc = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/GC_variable_500000_150_bwa"
 # argv$blacklist = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/hg19-blacklist.v2_adjusted.bed"
-# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_76_bwa.bed"
+# argv$bins = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/variable_500000_150_bwa.bed"
 # argv$norm = "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/cnv-calling/files/hg19/normalize.tsv"
 # argv$binsize = 500000
 # argv$alpha = 0.0001
 # argv$undo.prune = 0.05
 # argv$penalty = 6
 # argv$type = "single"
-# argv$segmentation = "single"
+# argv$segmentation = "joint"
 # argv$minploidy = 1.7
-# argv$maxploidy = 6.5
+# argv$maxploidy = 3.5
 # argv$minpurity = 1
 # argv$maxpurity = 1
 # argv$sex = "male"
@@ -61,7 +61,6 @@ argv = parse_args(parser)
 # argv$randomforest = "/mnt/AchTeraD/Documents/Projects/scCUTseq/data/cell_classifier/randomforest.rds"
 # argv$rfthreshold = 0.3
 # argv$removethreshold = 300000
-
 
 # Check input parameters
 if(!file.exists(argv$counts)) {
@@ -234,7 +233,7 @@ if(out$segmentation_type == "joint") {
   mpcf_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(start.pos, num.mark), end = rep(end.pos, num.mark), seg.mean = rep(seg.mean, num.mark)), by = ID]
   
   # Set order
-  setorder(mpcf_rep, ID, chr, start)
+  #setorder(mpcf_rep, ID, chr, start)
   mpcf_rep[, bin_num := 1:.N, by = ID]
   out$segments = dcast(mpcf_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
   
@@ -258,15 +257,16 @@ segments_merged = pblapply(colnames(out$segments), function(cell) {
     indices = which(out$bins$chr == chr)
     mergeLevels(out$counts_lrr[[cell]][indices],
                 out$segments[[cell]][indices],
-                pv.thres = 1e-10,
+                pv.thres = 1e-5,
+                thresMax = .3,
                 verbose = 0)$vecMerged |> data.table()
   })
   merged = rbindlist(merged)
-                  
+  
   
   setnames(merged, cell)
   return(merged)
-
+  
 }, cl = threads)
 out$segments_merged = do.call(cbind, segments_merged)
 
@@ -293,19 +293,19 @@ out$segments_merged = do.call(cbind, segments_merged)
 median_segments = pblapply(colnames(out$counts_gc), function(cell) {
   # Get split points
   splits = c(1, which(out$segments_merged[[cell]] != data.table::shift(out$segments_merged[[cell]])), nrow(out$segments_merged) + 1)
-
+  
   dt = data.table(num = diff(splits))
   dt[, end := cumsum(num)]
   dt[, start := data.table::shift(end, fill = 0) + 1]
-
-
-
+  
+  
+  
   medians = sapply(1:nrow(dt), function(x) {
     return(median(out$counts_gc[[cell]][dt[x, start]:dt[x, end]]))
   })
   final = data.table(rep(medians, dt$num))
   setnames(final, cell)
-
+  
   return(final)
 }, cl = threads)
 
@@ -363,12 +363,12 @@ if(type == "single"){
     mins = arrayInd(which.min(dist_mat), dim(dist_mat))
     ploidy = ploidies[mins[2]]
     purity = purities[mins[1]]
-
+    
     return(data.table(sample = cell,
                       ploidy = ploidy,
                       purity = purity))
   }, cl = threads)
-
+  
   out$ploidies = rbindlist(res_ploidies)
   # 
   # # Setnames to CN
@@ -386,60 +386,60 @@ if(type == "single"){
   setnames(out$segments_scaled, colnames(out$segments_read))
   out$copynumber = round(out$segments_scaled)
   
-  
   # Write stats
-  message("Writing output...")
-  out$stats = data.table(
-    sample = samples
-  )
-  out$stats[, total_reads := sapply(sample, function(x) sum(out$counts[[x]]))]
-  out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
-  out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
-  out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(out$counts[[x]]))) / sum(out$counts[[x]])})]
-  out$stats[, non_integerness := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$segments_scaled[[x]])))]
-  out$stats[, bin_to_medians := sapply(sample, function(x) median(abs(out$segments_scaled[[x]] - out$counts_lrr_scaled[[x]])))]
-  out$stats[, bin_to_integer := sapply(sample, function(x) median(abs(out$copynumber[[x]] - out$counts_lrr_scaled[[x]])))]
-  out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
-  out$stats[, autocorrelation := 
-              sapply(sample, function(x) {
-                tail(acf(out$counts_lrr_scaled[[x]], 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)
-              })
-  ]
-  out$stats[, mean_absolute_deviation := sapply(sample, function(x) mad(out$counts_lrr[[x]], constant = 1))]
+  message("Calculating statistics...")
   
-  out$stats[, mean_variance := colMeans(var(out$copynumber), na.rm = TRUE)]
+  suppressWarnings({
+    out$stats = data.table(sample = samples)
+    out$stats[, total_reads := colSums(out$counts[, ..samples])]
+    out$stats[, mean_reads := colMeans(out$counts[, ..samples])]
+    out$stats[, median_reads := out$counts[, ..samples] |> as.matrix() |> colMedians()]
+    out$stats[, spikiness := out$counts[, ..samples] |> as.matrix() |> diff() |> abs() |> colSums() / total_reads]
+    out$stats[, non_integerness := (out$copynumber[, ..samples] - out$segments_scaled[, ..samples]) |> abs() |> as.matrix() |> colMedians()]
+    out$stats[, bin_to_medians := (out$segments_scaled[, ..samples] - out$counts_lrr_scaled[, ..samples]) |> abs() |> as.matrix() |> colMedians()]
+    out$stats[, bin_to_integer := (out$copynumber[, ..samples] - out$counts_lrr_scaled[, ..samples]) |> abs() |> as.matrix() |> colMedians()]
+    out$stats[, coef_variation := (out$counts_lrr[, ..samples] |> as.matrix() |> colSds(na.rm = TRUE)) / colMeans(out$counts_lrr[, ..samples])]
+    
+    # Calculate autocorrelation
+    out$stats[, autocorrelation := 
+                pbsapply(sample, function(x) {
+                  tail(acf(out$counts_lrr_scaled[[x]], 1, na.action = na.pass, type = "correlation", plot = FALSE)$acf, 1)
+                }, cl = threads)]
   
-  # Calculate halfiness
-  halfiness = (-log2(abs(pmin(abs(out$segments_scaled - out$counts_lrr_scaled), 0.499) - 0.5))) - 1
-  out$stats[, total_halfiness := colSums(halfiness, na.rm = TRUE)]
-  out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr_scaled + 1), na.rm = TRUE)]
-  out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
-  out$stats[, mean_cn := sapply(sample, function(x) mean(out$copynumber[[x]]))]
-  out$stats[, mode_cn := 
-              sapply(sample, function(x) {
-                names(table(out$copynumber[[x]]))[which(table(out$copynumber[[x]]) == max(table(out$copynumber[[x]])))[1]]
-              })
-  ]
-  
-  # Run randomforest classification
-  prediction = as.data.table(predict(rf, out$stats, type="prob"))
-  out$stats[, classifier_prediction := ifelse(prediction$good >= rfthreshold, "good", "bad")]
-  
+    out$stats[, mean_absolute_deviation := out$counts_lrr[, ..samples] |> as.matrix() |> colMads(constant = 1)]
+    out$stats[, mean_variance := out$copynumber[, ..samples] |> var() |> colMeans()]
+              
+    # Calculate halfiness
+    halfiness = (-log2(abs(pmin(abs(out$segments_scaled[, ..samples] - out$counts_lrr_scaled[, ..samples]), 0.499) - 0.5))) - 1
+    out$stats[, total_halfiness := colSums(halfiness, na.rm = TRUE)]
+    out$stats[, scaled_halfiness := colSums(halfiness / (out$counts_lrr_scaled[, ..samples] + 1), na.rm = TRUE)]
+    out$stats[, breakpoints := out$segments_long[, 1:3] |> unique() |> nrow()]
+    out$stats[, mean_cn := colMeans(out$copynumber[, ..samples])]
+    out$stats[, mode_cn := sapply(samples, function(x) names(sort(-table(out$copynumber[[x]]))[1]))]  
+    
+    # Run randomforest classification
+    prediction = as.data.table(predict(rf, out$stats, type="prob"))
+    out$stats[, classifier_prediction := ifelse(prediction$good >= rfthreshold, "good", "bad")]
+  })
+            
 } else {
-  # Write stats for bulk
-  out$stats = data.table(
-    sample = samples
-  )
-  out$stats[, total_reads := sapply(sample, function(x) sum(out$counts[[x]]))]
-  out$stats[, mean_reads := sapply(sample, function(x) mean(out$counts[[x]]))]
-  out$stats[, median_reads := sapply(sample, function(x) median(out$counts[[x]]))]
-  out$stats[, spikiness := sapply(sample, function(x){ sum(abs(diff(out$counts[[x]]))) / sum(out$counts[[x]])})]
-  out$stats[, coef_variation := sapply(sample, function(x) sd(out$counts_lrr[[x]], na.rm = TRUE) / mean(out$counts_lrr[[x]], na.rm = TRUE))]
-  out$stats[, mean_absolute_deviation := sapply(sample, function(x) mad(out$counts_lrr[[x]], constant = 1))]
-  out$stats[, breakpoints := out$segments_long[, .N, by = .(ID)]$N - length(unique(out$segments_long$chrom))]
+  # Write stats
+  message("Calculating statistics...")
   
+  # Write stats for bulk
+  suppressWarnings({
+    out$stats = data.table(sample = samples)
+    out$stats[, total_reads := colSums(out$counts[, ..samples])]
+    out$stats[, mean_reads := colMeans(out$counts[, ..samples])]
+    out$stats[, median_reads := out$counts[, ..samples] |> as.matrix() |> colMedians()]
+    out$stats[, spikiness := out$counts[, ..samples] |> as.matrix() |> diff() |> abs() |> colSums() / total_reads]
+    out$stats[, coef_variation := (out$counts_lrr[, ..samples] |> as.matrix() |> colSds(na.rm = TRUE)) / colMeans(out$counts_lrr[, ..samples])]
+    out$stats[, mean_absolute_deviation := out$counts_lrr[, ..samples] |> as.matrix() |> colMads(constant = 1)]
+    out$stats[, breakpoints := nrow(unique(out$segments_long[, 1:3]))]
+  })
 }
 
 # Write output
+message("Writing output...")
 saveRDS(out, output)
 message("Finished.")
