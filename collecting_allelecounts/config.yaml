@@ -1,0 +1,13 @@
+indir: "/mnt/AchTeraD/data/scCUTseq/prostate/P6/bamfiles/"
+outdir: "/mnt/AchTeraD/data/scCUTseq/prostate/P6/AC_counts/"
+
+#snp_pos: "/mnt/AchTeraD/data/BICRO275/blood/pileup/P3_germline-variants.pos"
+snp_pos: "/mnt/AchTeraD/Documents/battenberg/grch37/1000genomesloci2012_allchr.txt"
+
+# If looping SNP positions for each chromosome
+indiv_chrs: True
+
+# Only used if above is set as True
+snp_pos_prefix: "/mnt/AchTeraD/Documents/battenberg/grch37/battenberg_1000genomesloci2012_v3/1000genomesloci2012_chr" 
+chromosomes: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X"]
+process_script: "/mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/collecting_allelecounts/process_alleliccounts.R"
