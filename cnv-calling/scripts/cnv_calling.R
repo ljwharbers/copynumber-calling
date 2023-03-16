@@ -215,26 +215,30 @@ if (out$segmentation_type == "single") {
                                        seg.mean = rep(seg.mean, num.mark)), by = .(ID)]
   #segments_rep = segments_rep[mixedorder(segments_rep$chr)]
   #setorder(segments_rep, ID)
-  segments_rep[, bin_num := rep(1:nrow(out$counts_lrr), ncol(out$counts_lrr))]
+  segments_rep[, bin_num := rep(seq_len(nrow(out$counts_lrr)), ncol(out$counts_lrr))]
   out$segments = dcast(segments_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
   
   # Reorder out$segments to match sample orders of previous analysis
   setcolorder(out$segments, colnames(out$counts_lrr))
 }
-if(out$segmentation_type == "joint") {
+if (out$segmentation_type == "joint") {
   message("Segmenting profiles using multipcf...")
   # Multipcf
   mpcf_input = as.data.frame(cbind(out$bins[, 1:2], out$counts_lrr))
-  mpcf = multipcf(mpcf_input, gamma = out$penalty, normalize = F, verbose = F)
+  mpcf = multipcf(mpcf_input, gamma = out$penalty, normalize = FALSE, verbose = FALSE)
   
   # Restructure
-  out$segments_long = melt(data.table(mpcf), id.vars = c("chrom", "start.pos", "end.pos", "arm", "n.probes"), variable.name = "ID")
+  out$segments_long = melt(data.table(mpcf), 
+                           id.vars = c("chrom", "start.pos", "end.pos", "arm", "n.probes"), variable.name = "ID")
   setnames(out$segments_long, c("chrom", "start.pos", "end.pos", "arm", "num.mark", "ID", "seg.mean"))
-  mpcf_rep = out$segments_long[, .(chr = rep(chrom, num.mark), start = rep(start.pos, num.mark), end = rep(end.pos, num.mark), seg.mean = rep(seg.mean, num.mark)), by = ID]
+  mpcf_rep = out$segments_long[, .(chr = rep(chrom, num.mark), 
+                                   start = rep(start.pos, num.mark), 
+                                   end = rep(end.pos, num.mark), 
+                                   seg.mean = rep(seg.mean, num.mark)), by = ID]
   
   # Set order
   #setorder(mpcf_rep, ID, chr, start)
-  mpcf_rep[, bin_num := 1:.N, by = ID]
+  mpcf_rep[, bin_num := seq_len(.N), by = ID]
   out$segments = dcast(mpcf_rep, bin_num ~ ID, value.var = "seg.mean")[, -1]
   
   # Reorder out$segments to match sample orders of previous analysis
@@ -270,8 +274,6 @@ segments_merged = pblapply(colnames(out$segments), function(cell) {
 }, cl = threads)
 out$segments_merged = do.call(cbind, segments_merged)
 
-
-
 # # Modify log ratio segments to contain median normalized read counts per bin
 # median_segments = pblapply(colnames(out$counts_gc), function(cell) {
 #   # Subset segments_long to only have correct sample
@@ -292,7 +294,8 @@ out$segments_merged = do.call(cbind, segments_merged)
 #### IN CASE OF MERGELEVELS
 median_segments = pblapply(colnames(out$counts_gc), function(cell) {
   # Get split points
-  splits = c(1, which(out$segments_merged[[cell]] != data.table::shift(out$segments_merged[[cell]])), nrow(out$segments_merged) + 1)
+  splits = c(1, which(out$segments_merged[[cell]] != data.table::shift(out$segments_merged[[cell]])),
+             nrow(out$segments_merged) + 1)
   
   dt = data.table(num = diff(splits))
   dt[, end := cumsum(num)]
@@ -300,7 +303,7 @@ median_segments = pblapply(colnames(out$counts_gc), function(cell) {
   
   
   
-  medians = sapply(1:nrow(dt), function(x) {
+  medians = sapply(seq_len(nrow(dt)), function(x) {
     return(median(out$counts_gc[[cell]][dt[x, start]:dt[x, end]]))
   })
   final = data.table(rep(medians, dt$num))
@@ -316,7 +319,7 @@ setnames(out$segments_read, colnames(out$counts_gc))
 # out$segments_read = data.table(sweep(out$segments_read, 2, colMeans(out$segments_read), '/'))
 
 # Perform integer copy number calling if it's single cell data
-if(type == "single"){
+if (type == "single") {
   message("Calculating integer copy numbers...")
   # # Initialize CN inference variables for SoS method -- Code adapted from ginkgo pipeline
   # n_cells = ncol(out$segments_read)
@@ -359,7 +362,9 @@ if(type == "single"){
   # }, cl = threads)
   
   res_ploidies = pblapply(colnames(out$segments_merged), function(cell) {
-    dist_mat = buildDistanceMatrix(out$segments_merged[[cell]], rep(1, nrow(out$segments_merged)), purs = purities, ploidies = ploidies, maxTumourPhi = 8, ismale = ismale)
+    dist_mat = buildDistanceMatrix(out$segments_merged[[cell]], 
+                                   rep(1, nrow(out$segments_merged)), 
+                                   purs = purities, ploidies = ploidies, maxTumourPhi = 8, ismale = ismale)
     mins = arrayInd(which.min(dist_mat), dim(dist_mat))
     ploidy = ploidies[mins[2]]
     purity = purities[mins[1]]
@@ -376,12 +381,16 @@ if(type == "single"){
   # out$cn = CN
   
   # Scale counts_lrr
-  res = pblapply(colnames(out$counts_lrr), function(cell) out$counts_lrr[[cell]] * out$ploidies[sample == cell, ploidy], cl = threads)
+  res = pblapply(colnames(out$counts_lrr), function(cell) {
+    out$counts_lrr[[cell]] * out$ploidies[sample == cell, ploidy]
+    }, cl = threads)
   out$counts_lrr_scaled = data.table(do.call(cbind, res))
   setnames(out$counts_lrr_scaled, colnames(out$counts_lrr))
   
   # Save to out
-  res = pblapply(colnames(out$segments_read), function(cell) out$segments_read[[cell]] * out$ploidies[sample == cell, ploidy], cl = threads)
+  res = pblapply(colnames(out$segments_read), function(cell) {
+    out$segments_read[[cell]] * out$ploidies[sample == cell, ploidy]
+    }, cl = threads)
   out$segments_scaled = data.table(do.call(cbind, res))
   setnames(out$segments_scaled, colnames(out$segments_read))
   out$copynumber = round(out$segments_scaled)

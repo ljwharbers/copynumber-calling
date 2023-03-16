@@ -61,7 +61,8 @@ rule processCounts:
         outdir + "{sample}_allelecounts.tsv.gz"
     priority: 10
     shell:
-        rscript + " -i {input} -o {output}"
+        #rscript + " -i {input} -o {output}"
+        "gzip {input}"
 
 ## Gzip output
 #rule gzip:

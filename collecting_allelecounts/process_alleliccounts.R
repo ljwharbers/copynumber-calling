@@ -21,7 +21,7 @@ argv = parse_args(parser)
 
 # Load in file
 counts = fread(argv$input)
-counts[, Good_depth := as.numeric(Good_depth)]
+#counts[, Good_depth := as.numeric(Good_depth)]
 counts = counts[Good_depth > 0]
 
 # Write gzipped file
