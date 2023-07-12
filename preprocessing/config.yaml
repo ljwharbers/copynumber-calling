@@ -1,10 +1,10 @@
 # Sample related
-indir: "/mnt/AchTeraD/data/BICRO291/fastq/"
-samplename: "DG11_S2"
-outdir: "/mnt/AchTeraD/data/BICRO291/DG11/"
+indir: "/mnt/AchTeraD/data/BICRO246/fastq/"
+samplename: "MS74_S1"
+outdir: "/mnt/AchTeraD/data/BICRO246/MS74/"
 paired: False
-lanesplit: False
-trim: True # Only for paired samples
+lanesplit: True
+trim: False # Only for paired samples
 lanes: ["L001", "L002", "L003", "L004"] # Might need to change for NextSeq 2000 vs Nextseq500/550 or Novaseq
 
 # Semi-static
@@ -15,6 +15,7 @@ mismatches: 2
 
 # Reference
 ref: "/mnt/AchTeraD/Documents/references/hg19/hg19.fa"
+#ref: "/mnt/AchTeraD/Documents/references/kang_ref/Homo_sapiens_assembly38.fasta"
 
 # Tools
 demux: "python /mnt/AchTeraD/Documents/Projects/scCUTseq/copynumber-pipeline/preprocessing/processBarcode.py"
