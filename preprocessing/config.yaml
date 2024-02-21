@@ -1,9 +1,9 @@
 # Sample related
-indir: "/mnt/AchTeraD/data/BICRO246/fastq/"
-samplename: "MS74_S1"
-outdir: "/mnt/AchTeraD/data/BICRO246/MS74/"
+indir: "/mnt/sequencing/BICRO363/fastq/"
+samplename: "novseq_testrun"
+outdir: "/mnt/sequencing/BICRO363/novseq_testrun/"
 paired: False
-lanesplit: True
+lanesplit: False
 trim: False # Only for paired samples
 lanes: ["L001", "L002", "L003", "L004"] # Might need to change for NextSeq 2000 vs Nextseq500/550 or Novaseq
 

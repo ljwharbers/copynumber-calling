@@ -45,7 +45,8 @@ normseg = binpath + config['normseg']
 # Get samples
 samples = [os.path.basename(x) for x in glob.glob(full_path + "/bamfiles/" + "*bam")]
 #samples = [x.replace(".dedup_q30.bam", "") for x in samples]
-samples = [x.replace(".dedup.bam", "") for x in samples]
+#samples = [x.replace(".dedup.bam", "") for x in samples]
+samples = [x.replace("_sorted_dedup.bam", "") for x in samples]
 
 rule all:
 	input:
@@ -56,7 +57,8 @@ rule all:
 rule makeBed:
 	input:
 		#bam=full_path + "bamfiles/{sample}.dedup_q30.bam"
-		bam=full_path + "bamfiles/{sample}.dedup.bam"
+		#bam=full_path + "bamfiles/{sample}.dedup.bam"
+		bam=full_path + "bamfiles/{sample}_sorted_dedup.bam"
 	output:
 		bed=full_path + "cnv/bedfiles/{sample}.bed.gz"
 	shell:
